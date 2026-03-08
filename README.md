@@ -8,25 +8,34 @@ Al analizar la naturaleza de la empresa (transformación metalmecánica, fluctua
 
 ### A. Lenguaje y Framework: Python 3.12 + Django 5 (LTS)
 El cerebro del sistema. Django es un framework diseñado para aplicaciones empresariales de alta demanda (utilizado por plataformas como Instagram y Pinterest).
-* **El Porqué (Pros):** Su sistema ORM (Mapeo Objeto-Relacional) garantiza que la lógica de negocio y las reglas contables se respeten a nivel de código antes de tocar la base de datos. La versión LTS (Long Term Support) asegura parches de seguridad por años, protegiendo la información de la empresa.
-* **El Reto (Contras):** Requiere un diseño de arquitectura más estricto desde el inicio comparado con lenguajes más informales, lo cual exige mayor tiempo de planeación en las fases tempranas.
+* **El Porqué (Pros):** Su sistema ORM garantiza que la lógica de negocio y las reglas contables se respeten a nivel de código antes de tocar la base de datos. 
+* **El Reto (Contras):** Requiere un diseño de arquitectura más estricto desde el inicio.
 
 ### B. Motor de Base de Datos: PostgreSQL 16
-El estándar de oro en bases de datos relacionales y cumplimiento ACID (Atomicidad, Consistencia, Aislamiento y Durabilidad).
-* **El Porqué (Pros):** En un sistema contable, un error de guardado no puede existir. Si se factura, el inventario debe bajar y la cuenta por cobrar debe subir simultáneamente. Si hay un micro-corte de energía, PostgreSQL revierte la transacción completa, garantizando que la contabilidad **nunca se descuadre**. Además, su soporte para datos estructurados (JSONB) es vital para almacenar y procesar los archivos XML de la Facturación Electrónica DIAN.
-* **El Reto (Contras):** Requiere un entorno de servidores más robusto que bases de datos simples (como MySQL o SQLite).
+El estándar de oro en bases de datos relacionales y cumplimiento ACID.
+* **El Porqué (Pros):** En un sistema contable, un error de guardado no puede existir. Soporte JSONB vital para DIAN.
 
 ### C. Infraestructura de Despliegue: Docker y Contenedores
-El ERP no se instala de forma tradicional, se despliega en "Contenedores" aislados.
-* **El Porqué (Pros):** Elimina el problema de "funciona en mi computadora pero no en el servidor". Docker empaqueta el sistema con sus dependencias exactas. Esto asegura que el entorno de desarrollo sea un clon perfecto del servidor de producción. Facilita las copias de seguridad y permite restaurar todo el sistema en un servidor nuevo en cuestión de minutos ante cualquier catástrofe.
+El ERP no se instala, se despliega en "Contenedores" aislados.
+* **El Porqué (Pros):** Entornos de desarrollo idénticos a producción.
 
 ## 3. Estado Actual de la Arquitectura (Avances)
 
-Hasta la fecha, se ha consolidado el **Cimiento Estructural** del sistema:
-1. **Contenedores Activos:** Orquestación local finalizada (Base de datos y Servidor Web comunicándose de forma segura).
-2. **Módulo Core (Configuración):** Creación de las tablas maestras de parametrización empresarial, incluyendo la carga de catálogos oficiales (Municipios DANE, Códigos CIIU).
-3. **Módulo de Terceros (Blindado):** Se diseñó un modelo de datos unificado para Clientes, Proveedores y Empleados. 
-   * *Innovación Implementada:* Se adaptó la base de datos para soportar la validación y autocompletado del RUT mediante Proveedores Tecnológicos (API REST), garantizando que el sistema recolecte los datos obligatorios exigidos por la DIAN (Resolución 000042) y alertando al departamento contable si un tercero tiene información faltante que pueda generar bloqueos fiscales.
+El ERP ya cuenta con su **Cimiento Estructural** y **Motor de Operaciones** construidos y validados:
 
-## 4. Próxima Fase Estratégica
-La siguiente etapa de ingeniería comprende el **Motor de Inventario y Transformación**. Se está realizando un levantamiento de requerimientos físicos en planta para mapear correctamente las mermas (retales), las conversiones de unidades (Toneladas a Kilos/Metros) y las políticas de bloqueo estricto contra facturación en negativo para proteger la integridad del Kardex.
+1. **Módulos Core y Terceros:** Parametrización empresarial y catálogo único de clientes/proveedores con blindaje DIAN. Se implementó un comando de inyección de datos semilla (`seed_data`) para autocompletar geografía y catálogos.
+2. **Módulo de Inventario (Kardex Inmutable):** Arquitectura avanzada de Bodegas, Ítems y Conversiones. Se implementó un Kardex (*MovimientoInventario*) de **Sólo Lectura**, protegido por Signals nativas y bloqueos administrativos para prevenir manipulación manual de saldos.
+3. **Módulo de Compras (Abastecimiento):** Creación de facturación a proveedores conectada en tiempo real al Kardex gracias a transacciones atómicas de Postgres. Implementa autocálculo matemático (Subtotal, IVA 19%, Total) e inmutabilidad tras confirmación.
+4. **Módulo de Ventas (Validación NIIF):** Cierre de ciclo. Configurado con lógica anti-negativos; el sistema ejecuta bloqueos (`ValidationError`) en microsegundos si se intenta facturar material sin saldo en bodegas. Descarga automática del Kardex al confirmar.
+
+## 4. Documentación Detallada (Diagramas de Flujo)
+
+Para entender cómo operan y se comunican los módulos a nivel de datos, consulte la carpeta `/docs` en la raíz del proyecto:
+
+- [01. Core y Terceros](docs/01_core_terceros.md)
+- [02. Inventario y Kardex](docs/02_inventario_kardex.md)
+- [03. Gestión de Compras](docs/03_compras_abastecimiento.md)
+- [04. Facturación y Ventas](docs/04_ventas_facturacion.md)
+
+## 5. Próxima Fase Estratégica
+La siguiente etapa consiste en orquestar el submódulo de **Transformación/Producción** (donde la materia prima como acero o láminas se fusiona/corta generando mermas o ítems nuevos) y la preparación para la conexión por API de la Facturación Electrónica DIAN.

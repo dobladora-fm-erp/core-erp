@@ -1,11 +1,10 @@
 from django.contrib import admin
-from django.db import transaction
+from django.core.exceptions import ValidationError
 from decimal import Decimal
-from .models import FacturaCompra, DetalleCompra
-from inventario.models import MovimientoInventario
+from .models import FacturaVenta, DetalleVenta
 
-class DetalleCompraInline(admin.TabularInline):
-    model = DetalleCompra
+class DetalleVentaInline(admin.TabularInline):
+    model = DetalleVenta
     extra = 1
 
     def has_add_permission(self, request, obj=None):
@@ -20,12 +19,12 @@ class DetalleCompraInline(admin.TabularInline):
         if obj and obj.estado == 'Confirmada': return False
         return super().has_delete_permission(request, obj)
 
-@admin.register(FacturaCompra)
-class FacturaCompraAdmin(admin.ModelAdmin):
-    list_display = ('numero_factura_proveedor', 'proveedor', 'fecha_emision', 'total', 'estado', 'procesada')
-    search_fields = ('numero_factura_proveedor', 'proveedor__razon_social', 'proveedor__numero_identificacion')
-    list_filter = ('estado', 'fecha_emision', 'procesada')
-    inlines = [DetalleCompraInline]
+@admin.register(FacturaVenta)
+class FacturaVentaAdmin(admin.ModelAdmin):
+    list_display = ('numero_factura', 'cliente', 'fecha_emision', 'total', 'estado', 'procesada')
+    list_filter = ('estado', 'fecha_emision')
+    search_fields = ('numero_factura', 'cliente__razon_social', 'cliente__numero_identificacion')
+    inlines = [DetalleVentaInline]
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.estado == 'Confirmada':
@@ -38,34 +37,36 @@ class FacturaCompraAdmin(admin.ModelAdmin):
         
         # 1. Autocálculo de Totales
         total_detalles = sum(detalle.subtotal for detalle in obj.detalles.all())
-        iva_calculado = total_detalles * Decimal('0.19') # Calculamos 19% de IVA
+        iva_calculado = total_detalles * Decimal('0.19')
         
         obj.subtotal = total_detalles
         obj.impuestos = iva_calculado
         obj.total = total_detalles + iva_calculado
         obj.save(update_fields=['subtotal', 'impuestos', 'total'])
 
-        # 2. Lógica del Kardex (Solo si no está procesada)
+        # 2. Validación de Stock y Trazabilidad Kardex
         if obj.estado == 'Confirmada' and not obj.procesada:
-            from inventario.models import MovimientoInventario
+            from inventario.models import MovimientoInventario, InventarioBodega
             from django.db import transaction
+            
             with transaction.atomic():
                 for detalle in obj.detalles.all():
+                    # Validación estricta de negativos
+                    if detalle.item.maneja_inventario:
+                        saldo = InventarioBodega.objects.filter(item=detalle.item, bodega=detalle.bodega_origen).first()
+                        cantidad_disponible = saldo.cantidad_actual if saldo else 0
+                        if cantidad_disponible < detalle.cantidad:
+                            raise ValidationError(f"Stock insuficiente para {detalle.item}. Disponible: {cantidad_disponible}, Requerido: {detalle.cantidad}")
+
+                    # Registro de salida en Kardex
                     MovimientoInventario.objects.create(
                         item=detalle.item,
-                        bodega_destino=detalle.bodega_destino,
-                        tipo_movimiento='Entrada',
+                        bodega_origen=detalle.bodega_origen,
+                        tipo_movimiento='Salida',
                         cantidad=detalle.cantidad,
-                        costo_unitario=detalle.costo_unitario,
-                        concepto=f"Compra Factura Proveedor: {obj.numero_factura_proveedor}",
+                        costo_unitario=detalle.item.costo_promedio,
+                        concepto=f"Venta Factura: {obj.numero_factura}",
                         usuario=request.user
                     )
                 obj.procesada = True
                 obj.save(update_fields=['procesada'])
-
-@admin.register(DetalleCompra)
-class DetalleCompraAdmin(admin.ModelAdmin):
-    list_display = ('factura', 'item', 'bodega_destino', 'cantidad', 'costo_unitario', 'subtotal')
-    search_fields = ('factura__numero_factura_proveedor', 'item__nombre', 'item__codigo_sku')
-    list_filter = ('bodega_destino',)
-    readonly_fields = ('subtotal',)
