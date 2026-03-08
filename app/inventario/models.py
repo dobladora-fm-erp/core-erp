@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class UnidadMedida(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre", help_text="Ej: Kilogramo")
@@ -60,3 +61,75 @@ class ConversionUnidad(models.Model):
 
     def __str__(self):
         return f"1 {self.unidad_alternativa.abreviatura} = {self.factor_multiplicador} {self.item.unidad_medida_base.abreviatura}(s) de {self.item.nombre}"
+
+class Bodega(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre")
+    direccion = models.CharField(max_length=255, null=True, blank=True, verbose_name="Dirección")
+    es_activa = models.BooleanField(default=True, verbose_name="Es Activa")
+
+    def __str__(self):
+        return self.nombre
+
+class InventarioBodega(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, verbose_name="Ítem")
+    bodega = models.ForeignKey(Bodega, on_delete=models.CASCADE, verbose_name="Bodega")
+    cantidad_actual = models.DecimalField(max_digits=12, decimal_places=4, default=0, verbose_name="Cantidad Actual")
+
+    class Meta:
+        unique_together = ('item', 'bodega')
+        verbose_name = "Inventario por Bodega"
+        verbose_name_plural = "Inventarios por Bodega"
+
+    def __str__(self):
+        return f"{self.item.nombre} en {self.bodega.nombre}: {self.cantidad_actual}"
+
+class MovimientoInventario(models.Model):
+    TIPO_MOVIMIENTO_CHOICES = [
+        ('Entrada', 'Entrada (Compra/Devolución)'),
+        ('Salida', 'Salida (Venta/Merma)'),
+        ('Traslado', 'Traslado entre Bodegas'),
+        ('Ajuste', 'Ajuste de Inventario'),
+    ]
+
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name="Ítem")
+    bodega_origen = models.ForeignKey(
+        Bodega, 
+        related_name='movimientos_salida', 
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True,
+        verbose_name="Bodega Origen"
+    )
+    bodega_destino = models.ForeignKey(
+        Bodega, 
+        related_name='movimientos_entrada', 
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True,
+        verbose_name="Bodega Destino"
+    )
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="Usuario")
+
+    tipo_movimiento = models.CharField(max_length=20, choices=TIPO_MOVIMIENTO_CHOICES, verbose_name="Tipo de Movimiento")
+    cantidad = models.DecimalField(max_digits=12, decimal_places=4, verbose_name="Cantidad")
+    costo_unitario = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        help_text="Costo al momento del movimiento",
+        verbose_name="Costo Unitario"
+    )
+
+    fecha_movimiento = models.DateTimeField(auto_now_add=True, verbose_name="Fecha del Movimiento")
+    concepto = models.CharField(
+        max_length=255, 
+        help_text="Ej: Factura de Compra #123, Ajuste por gotera",
+        verbose_name="Concepto"
+    )
+
+    class Meta:
+        verbose_name = "Movimiento de Inventario (Kardex)"
+        verbose_name_plural = "Movimientos de Inventario (Kardex)"
+
+    def __str__(self):
+        return f"{self.tipo_movimiento} - {self.item.nombre} ({self.cantidad}) el {self.fecha_movimiento.strftime('%Y-%m-%d %H:%M')}"
+
