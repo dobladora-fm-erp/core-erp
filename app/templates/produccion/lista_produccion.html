@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-secondary m-0"><i class="bi bi-tools"></i> Control de Planta y Producción</h2>
+        <a href="/admin/produccion/ordenproduccion/add/" class="btn btn-warning shadow-sm fw-bold">
+            <i class="bi bi-gear-fill me-2"></i>Nueva Orden de Transformación
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle m-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">N° Orden</th>
+                            <th>Materia Prima (Origen)</th>
+                            <th>Producto Terminado (Destino)</th>
+                            <th>Cantidad Producida</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for orden in ordenes %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-muted">{{ orden.numero_orden }}</td>
+                            <td>
+                                {% for insumo in orden.insumos.all %}
+                                <div class="mb-1"><i class="bi bi-box-seam text-secondary me-2"></i>{{
+                                    insumo.item.nombre }}</div>
+                                {% endfor %}
+                            </td>
+                            <td class="fw-bold">
+                                {% for producto in orden.productos.all %}
+                                <div class="mb-1"><i class="bi bi-check-circle-fill text-success me-2"></i>{{
+                                    producto.item.nombre }}</div>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for producto in orden.productos.all %}
+                                <span class="badge bg-info text-dark fs-6 px-3 py-1 mb-1 d-block">
+                                    {{ producto.cantidad }} Unds.
+                                </span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if orden.estado == 'Finalizada' %}bg-success{% else %}bg-secondary{% endif %} fs-6 px-3 py-2">
+                                    {{ orden.estado }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="bi bi-cone-striped fs-1 d-block mb-2"></i>
+                                No hay órdenes de producción registradas en la planta.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
