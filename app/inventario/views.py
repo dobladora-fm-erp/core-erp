@@ -1,3 +1,7 @@
-from django.shortcuts import render
+from rest_framework import generics
+from .models import InventarioBodega
+from .serializers import InventarioBodegaSerializer
 
-# Create your views here.
+class InventarioAPIView(generics.ListAPIView):
+    queryset = InventarioBodega.objects.select_related('item', 'bodega').all()
+    serializer_class = InventarioBodegaSerializer
