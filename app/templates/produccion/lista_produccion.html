@@ -4,7 +4,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-secondary m-0"><i class="bi bi-tools"></i> Control de Planta y Producción</h2>
-        <a href="/admin/produccion/ordenproduccion/add/" class="btn btn-warning shadow-sm fw-bold">
+        <a href="{% url 'produccion_crear' %}" class="btn btn-warning shadow-sm fw-bold">
             <i class="bi bi-gear-fill me-2"></i>Nueva Orden de Transformación
         </a>
     </div>
@@ -25,24 +25,25 @@
                     <tbody>
                         {% for orden in ordenes %}
                         <tr>
-                            <td class="ps-3 fw-bold text-muted">{{ orden.numero_orden }}</td>
+                            <td class="ps-3 fw-bold">
+                                <a href="{% url 'produccion_detalle' orden.id %}" class="text-decoration-none">
+                                    {{ orden.numero_orden }}
+                                </a>
+                            </td>
                             <td>
                                 {% for insumo in orden.insumos.all %}
-                                <div class="mb-1"><i class="bi bi-box-seam text-secondary me-2"></i>{{
-                                    insumo.item.nombre }}</div>
-                                {% endfor %}
-                            </td>
-                            <td class="fw-bold">
-                                {% for producto in orden.productos.all %}
-                                <div class="mb-1"><i class="bi bi-check-circle-fill text-success me-2"></i>{{
-                                    producto.item.nombre }}</div>
+                                <div class="small"><i class="bi bi-box-seam text-danger me-1"></i>{{ insumo.item.nombre
+                                    }} ({{ insumo.cantidad }})</div>
+                                {% empty %}
+                                <span class="text-muted">Sin insumos</span>
                                 {% endfor %}
                             </td>
                             <td>
                                 {% for producto in orden.productos.all %}
-                                <span class="badge bg-info text-dark fs-6 px-3 py-1 mb-1 d-block">
-                                    {{ producto.cantidad }} Unds.
-                                </span>
+                                <div class="small fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i>{{
+                                    producto.item.nombre }} ({{ producto.cantidad }})</div>
+                                {% empty %}
+                                <span class="text-muted">Sin productos</span>
                                 {% endfor %}
                             </td>
                             <td>

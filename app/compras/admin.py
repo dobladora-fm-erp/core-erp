@@ -63,9 +63,4 @@ class FacturaCompraAdmin(admin.ModelAdmin):
                 obj.procesada = True
                 obj.save(update_fields=['procesada'])
 
-@admin.register(DetalleCompra)
-class DetalleCompraAdmin(admin.ModelAdmin):
-    list_display = ('factura', 'item', 'bodega_destino', 'cantidad', 'costo_unitario', 'subtotal')
-    search_fields = ('factura__numero_factura_proveedor', 'item__nombre', 'item__codigo_sku')
-    list_filter = ('bodega_destino',)
-    readonly_fields = ('subtotal',)
+

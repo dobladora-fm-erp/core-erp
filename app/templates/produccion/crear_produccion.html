@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <form method="POST" id="form-produccion">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-secondary m-0"><i class="bi bi-tools"></i> Registrar Transformación (Materia Prima &rarr;
+                Producto)</h2>
+            <div>
+                <a href="{% url 'produccion_lista' %}" class="btn btn-outline-secondary me-2"><i
+                        class="bi bi-x-circle me-1"></i> Cancelar</a>
+                <button type="submit" class="btn btn-warning fw-bold shadow-sm"
+                    onclick="return confirm('¿Registrar Orden de Producción? Esto consumirá los insumos y registrará los nuevos productos en el Kardex instantáneamente.');">
+                    <i class="bi bi-check-all me-1"></i> Confirmar Transformación
+                </button>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if insumos_formset.non_form_errors or productos_formset.non_form_errors %}
+        <div class="alert alert-danger shadow-sm">
+            {{ insumos_formset.non_form_errors }}
+            {{ productos_formset.non_form_errors }}
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- Encabezado Maestro -->
+            <div class="col-md-12 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light fw-bold text-secondary">
+                        <i class="bi bi-card-heading me-1"></i> Observaciones (Lote/Receta)
+                    </div>
+                    <div class="card-body bg-white pb-1">
+                        <div class="mb-3">
+                            {{ form.observaciones }}
+                            <div class="text-danger small">{{ form.observaciones.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Insumos Consumidos (Salida) -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div
+                        class="card-header bg-danger text-white fw-bold d-flex justify-content-between align-items-center">
+                        <div><i class="bi bi-box-arrow-up-right me-1"></i> Materia Prima a Consumir (- Salida)</div>
+                        <button type="button" id="btn-add-insumo" class="btn btn-sm btn-light text-danger fw-bold"><i
+                                class="bi bi-plus-lg me-1"></i> Insumo</button>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ insumos_formset.management_form }}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle m-0" id="tabla-insumos">
+                                <thead class="table-light text-secondary">
+                                    <tr>
+                                        <th>Insumo (Kardex)</th>
+                                        <th>Bodega</th>
+                                        <th style="width:20%">Cant.</th>
+                                        <th class="text-center">X</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="insumos-body">
+                                    {% for inline_form in insumos_formset.forms %}
+                                    <tr class="insumo-row">
+                                        <td>{{ inline_form.item }}<div class="text-danger small">{{
+                                                inline_form.item.errors }}</div>
+                                        </td>
+                                        <td>{{ inline_form.bodega_origen }}<div class="text-danger small">{{
+                                                inline_form.bodega_origen.errors }}</div>
+                                        </td>
+                                        <td>{{ inline_form.cantidad }}<div class="text-danger small">{{
+                                                inline_form.cantidad.errors }}</div>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if inline_form.instance.pk %}
+                                            {{ inline_form.DELETE }}
+                                            {% else %}
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-danger btn-remove-insumo"><i
+                                                    class="bi bi-trash"></i></button>
+                                            {% endif %}
+                                            <div class="d-none">{{ inline_form.id }}</div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Productos Generados (Entrada) -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div
+                        class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+                        <div><i class="bi bi-box-arrow-in-down-left me-1"></i> Producto Resultante (+ Entrada)</div>
+                        <button type="button" id="btn-add-producto" class="btn btn-sm btn-light text-success fw-bold"><i
+                                class="bi bi-plus-lg me-1"></i> Producto</button>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ productos_formset.management_form }}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle m-0" id="tabla-productos">
+                                <thead class="table-light text-secondary">
+                                    <tr>
+                                        <th>Producto Final</th>
+                                        <th>Bodega Destino</th>
+                                        <th style="width:15%">Cant.</th>
+                                        <th style="width:20%">Costo U. Asignado</th>
+                                        <th class="text-center">X</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productos-body">
+                                    {% for inline_form in productos_formset.forms %}
+                                    <tr class="producto-row">
+                                        <td>{{ inline_form.item }}<div class="text-danger small">{{
+                                                inline_form.item.errors }}</div>
+                                        </td>
+                                        <td>{{ inline_form.bodega_destino }}<div class="text-danger small">{{
+                                                inline_form.bodega_destino.errors }}</div>
+                                        </td>
+                                        <td>{{ inline_form.cantidad }}<div class="text-danger small">{{
+                                                inline_form.cantidad.errors }}</div>
+                                        </td>
+                                        <td>{{ inline_form.costo_unitario_asignado }}<div class="text-danger small">{{
+                                                inline_form.costo_unitario_asignado.errors }}</div>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if inline_form.instance.pk %}
+                                            {{ inline_form.DELETE }}
+                                            {% else %}
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-danger btn-remove-producto"><i
+                                                    class="bi bi-trash"></i></button>
+                                            {% endif %}
+                                            <div class="d-none">{{ inline_form.id }}</div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Temp Insumo -->
+<div class="d-none">
+    <table id="empty-insumo">
+        <tr class="insumo-row">
+            <td>{{ insumos_formset.empty_form.item }}</td>
+            <td>{{ insumos_formset.empty_form.bodega_origen }}</td>
+            <td>{{ insumos_formset.empty_form.cantidad }}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-insumo"><i
+                        class="bi bi-trash"></i></button>
+                <div class="d-none">{{ insumos_formset.empty_form.id }}</div>
+            </td>
+        </tr>
+    </table>
+    <table id="empty-producto">
+        <tr class="producto-row">
+            <td>{{ productos_formset.empty_form.item }}</td>
+            <td>{{ productos_formset.empty_form.bodega_destino }}</td>
+            <td>{{ productos_formset.empty_form.cantidad }}</td>
+            <td>{{ productos_formset.empty_form.costo_unitario_asignado }}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-producto"><i
+                        class="bi bi-trash"></i></button>
+                <div class="d-none">{{ productos_formset.empty_form.id }}</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Logica Insumos
+        const btnAddInsumo = document.getElementById("btn-add-insumo");
+        const insumoBody = document.getElementById("insumos-body");
+        const emptyInsumo = document.querySelector('#empty-insumo tbody').innerHTML;
+        const totalInsumos = document.getElementById("id_insumos-TOTAL_FORMS");
+
+        btnAddInsumo.addEventListener("click", function () {
+            const formCount = parseInt(totalInsumos.value);
+            const newRowHtml = emptyInsumo.replace(/__prefix__/g, formCount);
+            insumoBody.insertAdjacentHTML('beforeend', newRowHtml);
+            totalInsumos.value = formCount + 1;
+        });
+
+        insumoBody.addEventListener("click", function (e) {
+            if (e.target.closest('.btn-remove-insumo')) {
+                e.target.closest('.insumo-row').remove();
+            }
+        });
+
+        // Logica Productos
+        const btnAddProducto = document.getElementById("btn-add-producto");
+        const productoBody = document.getElementById("productos-body");
+        const emptyProducto = document.querySelector('#empty-producto tbody').innerHTML;
+        const totalProductos = document.getElementById("id_productos-TOTAL_FORMS");
+
+        btnAddProducto.addEventListener("click", function () {
+            const formCount = parseInt(totalProductos.value);
+            const newRowHtml = emptyProducto.replace(/__prefix__/g, formCount);
+            productoBody.insertAdjacentHTML('beforeend', newRowHtml);
+            totalProductos.value = formCount + 1;
+        });
+
+        productoBody.addEventListener("click", function (e) {
+            if (e.target.closest('.btn-remove-producto')) {
+                e.target.closest('.producto-row').remove();
+            }
+        });
+    });
+</script>
+{% endblock %}

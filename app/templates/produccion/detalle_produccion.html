@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-secondary m-0">
+            <i class="bi bi-tools text-warning"></i> Orden de Producción: {{ orden.numero_orden }}
+        </h2>
+        <span class="badge bg-warning text-dark fs-5 px-3 py-2">
+            Finalizada (Kardex Afectado)
+        </span>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light fw-bold text-secondary">
+            Observaciones Adicionales
+        </div>
+        <div class="card-body">
+            <p class="mb-0">{{ orden.observaciones|default:"Sin observaciones registradas." }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Salidas -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-danger text-white fw-bold">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Materias Primas Consumidas (Kardex -)
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for insumo in insumos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-box-seam me-2 text-danger"></i><strong>{{ insumo.item.nombre }}</strong>
+                                <div class="small text-muted"><i class="bi bi-shop me-1"></i>{{
+                                    insumo.bodega_origen.nombre }}</div>
+                            </div>
+                            <span class="badge bg-danger rounded-pill px-3 py-2">- {{ insumo.cantidad }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entradas -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-success text-white fw-bold">
+                    <i class="bi bi-box-arrow-in-down-left me-1"></i> Productos Manufacturados (Kardex +)
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for producto in productos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-gem me-2 text-success"></i><strong>{{ producto.item.nombre }}</strong>
+                                <div class="small text-muted"><i class="bi bi-shop me-1"></i>{{
+                                    producto.bodega_destino.nombre }} | Costo U: $ {{ producto.costo_unitario_asignado
+                                    }}</div>
+                            </div>
+                            <span class="badge bg-success rounded-pill px-3 py-2">+ {{ producto.cantidad }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'produccion_lista' %}" class="btn btn-outline-secondary shadow-sm"><i
+                class="bi bi-arrow-left me-2"></i>Volver al Historial de Lotes</a>
+    </div>
+</div>
+{% endblock %}

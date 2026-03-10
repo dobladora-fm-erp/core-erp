@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <form method="POST" id="form-venta">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-secondary m-0"><i class="bi bi-cart-plus"></i> Ingreso de Venta y CxC (Unificado)</h2>
+            <div>
+                <a href="{% url 'ventas_lista' %}" class="btn btn-outline-secondary me-2"><i
+                        class="bi bi-x-circle me-1"></i> Cancelar</a>
+                <button type="submit" class="btn btn-primary fw-bold shadow-sm"
+                    onclick="return confirm('¿Registrar venta definitiva? Esto descontará Kardex al instante y generará la Deuda (CxC) en Tesorería.');">
+                    <i class="bi bi-check-all me-1"></i> Confirmar y Guardar Transacción
+                </button>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if formset.non_form_errors %}
+        <div class="alert alert-danger shadow-sm">
+            {{ formset.non_form_errors }}
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- Encabezado Maestro -->
+            <div class="col-md-12 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light fw-bold text-secondary">
+                        <i class="bi bi-card-heading me-1"></i> Datos del Cliente y Plazos (Maestro)
+                    </div>
+                    <div class="card-body bg-white pb-1">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary fw-bold small">Cliente Facturado</label>
+                                {{ form.cliente }}
+                                <div class="text-danger small">{{ form.cliente.errors }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary fw-bold small">Fecha Compromiso de Pago</label>
+                                {{ form.fecha_vencimiento }}
+                                <div class="text-danger small">{{ form.fecha_vencimiento.errors }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalles en Lote -->
+            <div class="col-md-12 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div
+                        class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                        <div><i class="bi bi-list-check me-1"></i> Líneas de Facturación (Rebaja de Inventario)</div>
+                        <button type="button" id="btn-add-item" class="btn btn-sm btn-light text-primary fw-bold"><i
+                                class="bi bi-plus-lg me-1"></i> Agregar Fila</button>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ formset.management_form }}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle m-0" id="tabla-detalles">
+                                <thead class="table-light text-secondary">
+                                    <tr>
+                                        <th class="ps-3" style="width: 35%;">Ítem Inventariado (Kardex)</th>
+                                        <th style="width: 25%;">Bodega de Despacho</th>
+                                        <th style="width: 15%;">Cantidad Vendida</th>
+                                        <th style="width: 15%;">Precio de Venta ($)</th>
+                                        <th class="text-center" style="width: 10%;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="formset-body">
+                                    {% for inline_form in formset.forms %}
+                                    <tr class="formset-row">
+                                        <td class="ps-3">
+                                            {{ inline_form.item }}
+                                            <div class="text-danger small">{{ inline_form.item.errors }}</div>
+                                        </td>
+                                        <td>
+                                            {{ inline_form.bodega_origen }}
+                                            <div class="text-danger small">{{ inline_form.bodega_origen.errors }}</div>
+                                        </td>
+                                        <td>
+                                            {{ inline_form.cantidad }}
+                                            <div class="text-danger small">{{ inline_form.cantidad.errors }}</div>
+                                        </td>
+                                        <td>
+                                            {{ inline_form.precio_unitario }}
+                                            <div class="text-danger small">{{ inline_form.precio_unitario.errors }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if inline_form.instance.pk %}
+                                            {{ inline_form.DELETE }} <label class="small text-danger">Eliminar</label>
+                                            {% else %}
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-danger btn-remove-row"><i
+                                                    class="bi bi-trash"></i></button>
+                                            {% endif %}
+                                            <div class="d-none">{{ inline_form.id }}</div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Template Oculto JS para clonación de filas -->
+<div class="d-none">
+    <table id="empty-form-table">
+        <tr class="formset-row">
+            <td class="ps-3">{{ formset.empty_form.item }}</td>
+            <td>{{ formset.empty_form.bodega_origen }}</td>
+            <td>{{ formset.empty_form.cantidad }}</td>
+            <td>{{ formset.empty_form.precio_unitario }}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row"><i
+                        class="bi bi-trash"></i></button>
+                <div class="d-none">{{ formset.empty_form.id }}</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const btnAdd = document.getElementById("btn-add-item");
+        const formsetBody = document.getElementById("formset-body");
+        const emptyFormTemplate = document.querySelector('#empty-form-table tbody').innerHTML;
+        const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
+
+        btnAdd.addEventListener("click", function () {
+            const formCount = parseInt(totalForms.value);
+            const newRowHtml = emptyFormTemplate.replace(/__prefix__/g, formCount);
+
+            formsetBody.insertAdjacentHTML('beforeend', newRowHtml);
+            totalForms.value = formCount + 1;
+        });
+
+        formsetBody.addEventListener("click", function (e) {
+            if (e.target.closest('.btn-remove-row')) {
+                const row = e.target.closest('.formset-row');
+                row.remove();
+            }
+        });
+    });
+</script>
+{% endblock %}

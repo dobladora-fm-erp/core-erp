@@ -29,9 +29,11 @@
                                 {% for cuenta in cxc %}
                                 <tr>
                                     <td class="ps-3 fw-bold">
-                                        {% if cuenta.cliente.razon_social %}{{ cuenta.cliente.razon_social }}{% else
-                                        %}{{ cuenta.cliente.nombres }} {{ cuenta.cliente.apellidos|default:"" }}{% endif
-                                        %}
+                                        {% if cuenta.cliente.razon_social %}
+                                        {{ cuenta.cliente.razon_social }}
+                                        {% else %}
+                                        {{ cuenta.cliente.nombres }} {{ cuenta.cliente.apellidos|default:"" }}
+                                        {% endif %}
                                     </td>
                                     <td>{{ cuenta.fecha_vencimiento|date:"d M Y" }}</td>
                                     <td class="text-success fw-bold">$ {{ cuenta.saldo_pendiente }}</td>
@@ -68,9 +70,11 @@
                                 {% for cuenta in cxp %}
                                 <tr>
                                     <td class="ps-3 fw-bold">
-                                        {% if cuenta.proveedor.razon_social %}{{ cuenta.proveedor.razon_social }}{% else
-                                        %}{{ cuenta.proveedor.nombres }} {{ cuenta.proveedor.apellidos|default:"" }}{%
-                                        endif %}
+                                        {% if cuenta.proveedor.razon_social %}
+                                        {{ cuenta.proveedor.razon_social }}
+                                        {% else %}
+                                        {{ cuenta.proveedor.nombres }} {{ cuenta.proveedor.apellidos|default:"" }}
+                                        {% endif %}
                                     </td>
                                     <td>{{ cuenta.fecha_vencimiento|date:"d M Y" }}</td>
                                     <td class="text-danger fw-bold">$ {{ cuenta.saldo_pendiente }}</td>
