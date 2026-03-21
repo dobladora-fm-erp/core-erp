@@ -27,6 +27,8 @@ El ERP ya cuenta con su **Cimiento Estructural** y **Motor de Operaciones** cons
 2. **Módulo de Inventario (Kardex Inmutable):** Arquitectura avanzada de Bodegas, Ítems y Conversiones. Se implementó un Kardex (*MovimientoInventario*) de **Sólo Lectura**, protegido por Signals nativas y bloqueos administrativos para prevenir manipulación manual de saldos.
 3. **Módulo de Compras (Abastecimiento):** Creación de facturación a proveedores conectada en tiempo real al Kardex gracias a transacciones atómicas de Postgres. Implementa autocálculo matemático (Subtotal, IVA 19%, Total) e inmutabilidad tras confirmación.
 4. **Módulo de Ventas (Validación NIIF):** Cierre de ciclo. Configurado con lógica anti-negativos; el sistema ejecuta bloqueos (`ValidationError`) en microsegundos si se intenta facturar material sin saldo en bodegas. Descarga automática del Kardex al confirmar.
+5. **Módulo de Producción (Transformación):** Órdenes de producción para transformar materia prima en producto terminado o retales, moviendo saldos automáticamente en el Kardex al finalizar bajo el formato entrada/salida unificado.
+6. **Módulo de Tesorería (Finanzas):** Cuentas bancarias centralizadas, Cuentas por Cobrar (CxC) integradas directamente con Ventas y Cuentas por Pagar (CxP) conectadas con Compras. Control de flujo de caja y emisión de pagos/recibos auditable.
 
 ## 4. Documentación Detallada (Diagramas de Flujo)
 
@@ -36,6 +38,8 @@ Para entender cómo operan y se comunican los módulos a nivel de datos, consult
 - [02. Inventario y Kardex](docs/02_inventario_kardex.md)
 - [03. Gestión de Compras](docs/03_compras_abastecimiento.md)
 - [04. Facturación y Ventas](docs/04_ventas_facturacion.md)
+- [05. Producción y Transformación](docs/05_produccion_transformacion.md)
+- [06. Tesorería y Finanzas](docs/06_tesoreria_finanzas.md)
 
 ## 5. Próxima Fase Estratégica
-La siguiente etapa consiste en orquestar el submódulo de **Transformación/Producción** (donde la materia prima como acero o láminas se fusiona/corta generando mermas o ítems nuevos) y la preparación para la conexión por API de la Facturación Electrónica DIAN.
+La siguiente etapa consiste en la preparación para la conexión por API de la Facturación Electrónica DIAN y reportes NIIF avanzados, consolidando así el ecosistema fiscal.
