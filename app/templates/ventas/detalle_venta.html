@@ -3,12 +3,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-secondary m-0">
-            <i class="bi bi-receipt text-primary"></i> Comprobante de Venta:
-            {% if factura.numero_factura %}
-            {{ factura.numero_factura }}
-            {% else %}
-            S/N
-            {% endif %}
+            <i class="bi bi-receipt text-primary"></i> Comprobante de Venta: {% if factura.numero_factura %}{{ factura.numero_factura }}{% else %}S/N{% endif %}
         </h2>
         <span class="badge bg-primary fs-5 px-3 py-2">
             Confirmada & Contabilizada
@@ -23,18 +18,12 @@
             <div class="row text-dark">
                 <div class="col-md-6 border-end">
                     <p class="mb-2"><strong><i class="bi bi-person-badge me-1"></i> Cliente Facturado:</strong>
-                        {% if factura.cliente.razon_social %}
-                        {{ factura.cliente.razon_social }}
-                        {% else %}
-                        {{ factura.cliente.nombres }} {{ factura.cliente.apellidos }}
-                        {% endif %}
+                        {% if factura.cliente.razon_social %}{{ factura.cliente.razon_social }}{% else %}{{ factura.cliente.nombres }} {{ factura.cliente.apellidos }}{% endif %}
                     </p>
-                    <p class="mb-0"><strong><i class="bi bi-clock-history me-1"></i> Emisión / Vto:</strong> {{
-                        factura.fecha_emision|date:"d M Y" }} &rarr; {{ factura.fecha_vencimiento|date:"d M Y" }}</p>
+                    <p class="mb-0"><strong><i class="bi bi-clock-history me-1"></i> Emisión / Vto:</strong> {{ factura.fecha_emision|date:"d M Y" }} &rarr; {{ factura.fecha_vencimiento|date:"d M Y" }}</p>
                 </div>
                 <div class="col-md-6 ps-4">
-                    <div class="fs-5 mb-1"><strong>Total Transado (NIIF):</strong> <span class="text-success fw-bold">$
-                            {{ factura.total }}</span></div>
+                    <div class="fs-5 mb-1"><strong>Total Transado (NIIF):</strong> <span class="text-success fw-bold">$ {{ factura.total }}</span></div>
                     <div class="text-muted small">Subtotal: $ {{ factura.subtotal }} | IVA 19%: $ {{ factura.iva }}
                     </div>
                 </div>
@@ -62,10 +51,8 @@
                     <tbody>
                         {% for detalle in detalles %}
                         <tr>
-                            <td class="ps-4 fw-bold text-dark"><i class="bi bi-box-seam text-secondary me-2"></i>{{
-                                detalle.item.nombre }}</td>
-                            <td class="small"><i class="bi bi-shop me-1 text-muted"></i>{{ detalle.bodega_origen.nombre
-                                }}</td>
+                            <td class="ps-4 fw-bold text-dark"><i class="bi bi-box-seam text-secondary me-2"></i>{{ detalle.item.nombre }}</td>
+                            <td class="small"><i class="bi bi-shop me-1 text-muted"></i>{{ detalle.bodega_origen.nombre }}</td>
                             <td class="text-center"><span class="badge bg-secondary px-2">{{ detalle.cantidad }}</span>
                             </td>
                             <td class="text-end">$ {{ detalle.precio_unitario }}</td>

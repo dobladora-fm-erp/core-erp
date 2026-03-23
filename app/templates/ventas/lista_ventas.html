@@ -27,11 +27,7 @@
                         <tr>
                             <td class="ps-3 fw-bold">
                                 <a href="{% url 'venta_detalle' factura.id %}" class="text-decoration-none">
-                                    {% if factura.numero_factura %}
-                                    {{ factura.numero_factura }}
-                                    {% else %}
-                                    [Borrador Sin Confirmar]
-                                    {% endif %}
+                                    {% if factura.numero_factura %}{{ factura.numero_factura }}{% else %}Borrador{% endif %}
                                 </a>
                             </td>
                             <td>

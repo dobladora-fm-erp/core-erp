@@ -32,16 +32,14 @@
                             </td>
                             <td>
                                 {% for insumo in orden.insumos.all %}
-                                <div class="small"><i class="bi bi-box-seam text-danger me-1"></i>{{ insumo.item.nombre
-                                    }} ({{ insumo.cantidad }})</div>
+                                <div class="small"><i class="bi bi-box-seam text-danger me-1"></i>{{ insumo.item.nombre }} ({{ insumo.cantidad }})</div>
                                 {% empty %}
                                 <span class="text-muted">Sin insumos</span>
                                 {% endfor %}
                             </td>
                             <td>
                                 {% for producto in orden.productos.all %}
-                                <div class="small fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i>{{
-                                    producto.item.nombre }} ({{ producto.cantidad }})</div>
+                                <div class="small fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i>{{ producto.item.nombre }} ({{ producto.cantidad }})</div>
                                 {% empty %}
                                 <span class="text-muted">Sin productos</span>
                                 {% endfor %}
