@@ -21,7 +21,7 @@ from core.views import dashboard_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/inventario/', InventarioAPIView.as_view(), name='api_inventario'),
+    path('terceros/', include('terceros.urls')),
     path('inventario/', include('inventario.urls')),
     path('compras/', include('compras.urls')),
     path('ventas/', include('ventas.urls')),

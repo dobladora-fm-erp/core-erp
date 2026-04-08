@@ -6,7 +6,6 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Sum
 from decimal import Decimal
-from tesoreria.models import CuentaPorPagar
 from inventario.models import InventarioBodega, MovimientoInventario
 
 @login_required
@@ -89,15 +88,6 @@ def compra_crear_view(request):
                     factura.impuestos = factura.subtotal * Decimal('0.19') # IVA 19%
                     factura.total = factura.subtotal + factura.impuestos
                     factura.save()
-                    
-                    # Generar Cuenta por Pagar (Tesorería)
-                    CuentaPorPagar.objects.create(
-                        factura_origen=factura,
-                        proveedor=factura.proveedor,
-                        fecha_vencimiento=factura.fecha_vencimiento,
-                        monto_total=factura.total,
-                        saldo_pendiente=factura.total
-                    )
 
                     messages.success(request, f'Factura {factura.numero_factura_proveedor} registrada: Kardex alimentado y CxP Automática generada.')
                     return redirect('compras_lista')

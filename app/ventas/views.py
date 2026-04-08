@@ -9,7 +9,6 @@ from decimal import Decimal
 from django.utils import timezone
 import uuid
 from inventario.models import InventarioBodega, MovimientoInventario
-from tesoreria.models import CuentaPorCobrar
 
 @login_required
 def ventas_lista_view(request):
@@ -84,15 +83,6 @@ def venta_crear_view(request):
                     factura.iva = factura.subtotal * Decimal('0.19') # IVA 19%
                     factura.total = factura.subtotal + factura.iva
                     factura.save()
-                    
-                    # Generar Cuenta por Cobrar Automática
-                    CuentaPorCobrar.objects.create(
-                        factura_origen=factura,
-                        cliente=factura.cliente,
-                        fecha_vencimiento=factura.fecha_vencimiento,
-                        monto_total=factura.total,
-                        saldo_pendiente=factura.total
-                    )
 
                     messages.success(request, f'Factura {factura.numero_factura} registrada. Stock descontado y cuenta por cobrar generada exitosamente.')
                     return redirect('ventas_lista')

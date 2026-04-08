@@ -7,6 +7,8 @@
     <title>ERP - Dobladora FM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <style>
         body {
             background-color: #f4f6f9;
@@ -49,9 +51,11 @@
         <hr class="text-secondary">
         <nav class="nav flex-column">
             <a href="/" class="nav-link"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="{% url 'terceros_lista' %}" class="nav-link"><i class="bi bi-people me-2"></i> Terceros</a>
             <a href="{% url 'ventas_lista' %}" class="nav-link"><i class="bi bi-cart3 me-2"></i> Ventas</a>
             <a href="{% url 'compras_lista' %}" class="nav-link"><i class="bi bi-bag-check me-2"></i> Compras</a>
             <a href="{% url 'inventario_lista' %}" class="nav-link"><i class="bi bi-boxes me-2"></i> Inventario</a>
+            <a href="{% url 'items_lista' %}" class="nav-link ps-4 text-muted border-start border-secondary ms-2" style="font-size: 0.9em;"><i class="bi bi-box me-1"></i> Catálogo de Ítems</a>
             <a href="{% url 'produccion_lista' %}" class="nav-link"><i class="bi bi-tools me-2"></i> Producción</a>
             <a href="{% url 'tesoreria_lista' %}" class="nav-link"><i class="bi bi-bank me-2"></i> Tesorería</a>
         </nav>
@@ -75,9 +79,22 @@
 
         {% block content %}
         {% endblock %}
+        {% block extra_js %}{% endblock %}
+
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('select').select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+        });
+    </script>
+    {% block custom_scripts %}{% endblock %}
 </body>
 
 </html>
