@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-success text-white fw-bold py-3">
+                    <i class="bi bi-cash-stack me-2"></i>Registrar Pago Recibido (Ingreso)
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Cuenta por Cobrar</label>
+                            {{ form.cuenta_por_cobrar }}
+                            {% if form.cuenta_por_cobrar.errors %}
+                            <div class="text-danger small mt-1">{{ form.cuenta_por_cobrar.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Cuenta Bancaria Destino</label>
+                            {{ form.cuenta_destino }}
+                            {% if form.cuenta_destino.errors %}
+                            <div class="text-danger small mt-1">{{ form.cuenta_destino.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Monto a Abonar</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.monto }}
+                            </div>
+                            {% if form.monto.errors %}
+                            <div class="text-danger small mt-1">{{ form.monto.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted fw-bold">Referencia / Comprobante</label>
+                            {{ form.referencia }}
+                            {% if form.referencia.errors %}
+                            <div class="text-danger small mt-1">{{ form.referencia.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'tesoreria_lista' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Volver a Tesorería
+                            </a>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-check-circle me-1"></i> Registrar Ingreso
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

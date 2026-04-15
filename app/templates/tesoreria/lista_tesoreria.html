@@ -2,11 +2,30 @@
 
 {% block content %}
 <div class="container-fluid">
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-secondary m-0"><i class="bi bi-bank"></i> Gestión de Tesorería y Cartera</h2>
-        <a href="/admin/tesoreria/" class="btn btn-outline-secondary shadow-sm">
-            <i class="bi bi-sliders me-2"></i>Panel Contable Avanzado
-        </a>
+        <div>
+            <a href="{% url 'registrar_pago_recibido' %}" class="btn btn-success shadow-sm me-2">
+                <i class="bi bi-download me-2"></i>Recibir Pago
+            </a>
+            <a href="{% url 'registrar_pago_emitido' %}" class="btn btn-danger shadow-sm me-2">
+                <i class="bi bi-upload me-2"></i>Emitir Pago
+            </a>
+            <a href="/admin/tesoreria/" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-sliders me-2"></i>Panel Contable Avanzado
+            </a>
+        </div>
     </div>
 
     <div class="row">
@@ -23,6 +42,7 @@
                                     <th class="ps-3">Cliente</th>
                                     <th>Vencimiento</th>
                                     <th>Saldo Pendiente</th>
+                                    <th class="text-end pe-3">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -37,10 +57,15 @@
                                     </td>
                                     <td>{{ cuenta.fecha_vencimiento|date:"d M Y" }}</td>
                                     <td class="text-success fw-bold">$ {{ cuenta.saldo_pendiente }}</td>
+                                    <td class="text-end pe-3">
+                                        <a href="{% url 'registrar_pago_recibido' %}?cxc={{ cuenta.id }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Registrar Abono">
+                                            <i class="bi bi-cash-coin"></i> Abonar
+                                        </a>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">No hay cuentas por cobrar
+                                    <td colspan="4" class="text-center text-muted py-4">No hay cuentas por cobrar
                                         pendientes.</td>
                                 </tr>
                                 {% endfor %}
@@ -64,6 +89,7 @@
                                     <th class="ps-3">Proveedor</th>
                                     <th>Vencimiento</th>
                                     <th>Saldo Pendiente</th>
+                                    <th class="text-end pe-3">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,10 +104,15 @@
                                     </td>
                                     <td>{{ cuenta.fecha_vencimiento|date:"d M Y" }}</td>
                                     <td class="text-danger fw-bold">$ {{ cuenta.saldo_pendiente }}</td>
+                                    <td class="text-end pe-3">
+                                        <a href="{% url 'registrar_pago_emitido' %}?cxp={{ cuenta.id }}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Registrar Pago">
+                                            <i class="bi bi-wallet2"></i> Pagar
+                                        </a>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">No hay cuentas por pagar
+                                    <td colspan="4" class="text-center text-muted py-4">No hay cuentas por pagar
                                         pendientes.</td>
                                 </tr>
                                 {% endfor %}
