@@ -94,7 +94,158 @@
             });
         });
     </script>
+    <!-- Modal Universal para Relaciones -->
+    <div class="modal fade" id="relatedLookupModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title fw-bold" id="relatedLookupModalTitle">...</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="relatedLookupModalBody">
+            <div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     {% block custom_scripts %}{% endblock %}
+
+    <script>
+        $(document).ready(function() {
+            // Inicialización general Select2
+            $('select').select2({ theme: 'bootstrap-5', width: '100%' });
+
+            // 1. Decoración Dinámica de Selectores con data-add-url / data-edit-url
+            $('select[data-add-url], select[data-edit-url]').each(function() {
+                let selectElem = $(this);
+                let wrapper = $('<div class="input-group flex-nowrap"></div>');
+                // Select2 wrap
+                selectElem.wrap(wrapper);
+                let inputGroup = selectElem.parent();
+                
+                let btnGroup = $('<div class="btn-group ms-1" role="group"></div>');
+                
+                // Botón Editar
+                if (selectElem.attr('data-edit-url')) {
+                    let btnEdit = $('<button type="button" class="btn btn-outline-secondary btn-sm rounded" title="Editar"><i class="bi bi-pencil"></i></button>');
+                    btnEdit.on('click', function(e) {
+                        e.preventDefault();
+                        if(!selectElem.val()) { alert('Por favor selecciona un registro primero.'); return; }
+                        let url = selectElem.attr('data-edit-url').replace('__id__', selectElem.val());
+                        openRelatedModal(url, selectElem, "Editar Registro");
+                    });
+                    btnGroup.append(btnEdit);
+                }
+                
+                // Botón Agregar
+                if (selectElem.attr('data-add-url')) {
+                    let btnAdd = $('<button type="button" class="btn btn-outline-success btn-sm rounded ms-1" title="Agregar Nuevo"><i class="bi bi-plus-lg"></i></button>');
+                    btnAdd.on('click', function(e) {
+                        e.preventDefault();
+                        openRelatedModal(selectElem.attr('data-add-url'), selectElem, "Crear Registro");
+                    });
+                    btnGroup.append(btnAdd);
+                }
+
+                // Botón Ver
+                if (selectElem.attr('data-view-url')) {
+                    let btnView = $('<button type="button" class="btn btn-outline-info btn-sm rounded ms-1" title="Ver Detalle"><i class="bi bi-eye"></i></button>');
+                    btnView.on('click', function(e) {
+                        e.preventDefault();
+                        if(!selectElem.val()) { alert('Selecciona un registro primero.'); return; }
+                        let url = selectElem.attr('data-view-url').replace('__id__', selectElem.val());
+                        openRelatedModal(url, selectElem, "Ver Detalle", true);
+                    });
+                    btnGroup.append(btnView);
+                }
+
+                inputGroup.append(btnGroup);
+            });
+        });
+
+        // 2. Orquestador de peticiones AJAX y renderizado del Modal
+        let activeSelectTarget = null;
+        let isReadonlyMode = false;
+
+        function openRelatedModal(url, targetSelect, title, readonly=false) {
+            activeSelectTarget = targetSelect;
+            isReadonlyMode = readonly;
+            $('#relatedLookupModalTitle').text(title);
+            $('#relatedLookupModalBody').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
+            let m = new bootstrap.Modal(document.getElementById('relatedLookupModal'));
+            m.show();
+
+            // Fetch GET Formulario
+            url += url.includes('?') ? '&ajax=true' : '?ajax=true';
+            url += readonly ? '&readonly=true' : '';
+
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(res => res.text())
+                .then(html => {
+                    $('#relatedLookupModalBody').html(html);
+                    bindModalFormEvents(url);
+                })
+                .catch(err => {
+                    $('#relatedLookupModalBody').html('<div class="alert alert-danger">Error de conexión.</div>');
+                });
+        }
+
+        // 3. Interceptar POST del Formulario incrustado
+        function bindModalFormEvents(url) {
+            let form = $('#relatedLookupModalBody').find('form');
+            if (form.length === 0) return;
+            
+            // Si es readonly, inhabilitar todo y tapar botones
+            if (isReadonlyMode) {
+                form.find('input, select, textarea').prop('disabled', true);
+                form.find('button[type="submit"]').remove();
+                return;
+            }
+
+            form.on('submit', function(e) {
+                e.preventDefault();
+                let formData = new FormData(this);
+                // Inyectar ajax flag explicitamente
+                url = url.split('?')[0] + '?ajax=true';
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: formData
+                })
+                .then(res => {
+                    if(res.ok && res.headers.get('content-type').includes('application/json')) {
+                        return res.json();
+                    } else {
+                        // Devolvió HTML con errores de validación
+                        return res.text().then(html => { throw html; });
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar Select2 Original
+                        let newOption = new Option(data.text, data.id, true, true);
+                        if (activeSelectTarget.find(`option[value="${data.id}"]`).length > 0) {
+                             activeSelectTarget.find(`option[value="${data.id}"]`).text(data.text);
+                             activeSelectTarget.val(data.id).trigger('change');
+                        } else {
+                             activeSelectTarget.append(newOption).trigger('change');
+                        }
+                        bootstrap.Modal.getInstance(document.getElementById('relatedLookupModal')).hide();
+                    }
+                })
+                .catch(errHtml => {
+                    if (typeof errHtml === 'string') {
+                        $('#relatedLookupModalBody').html(errHtml);
+                        bindModalFormEvents(url); // Reenlazar si devuelve el formulario con lineas rojas
+                    } else {
+                        alert("Error inesperado al guardar.");
+                    }
+                });
+            });
+        }
+    </script>
 </body>
 
 </html>

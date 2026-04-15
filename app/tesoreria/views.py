@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import CuentaPorCobrar, CuentaPorPagar
-from .forms import PagoRecibidoForm, PagoEmitidoForm
+from django.http import JsonResponse
+from .models import CuentaPorCobrar, CuentaPorPagar, CuentaBancaria
+from .forms import PagoRecibidoForm, PagoEmitidoForm, CuentaBancariaForm
 
 @login_required
 def tesoreria_lista_view(request):
@@ -51,3 +52,43 @@ def registrar_pago_emitido_view(request):
         form = PagoEmitidoForm(initial=initial_data)
 
     return render(request, 'tesoreria/registrar_pago_emitido.html', {'form': form})
+
+@login_required
+def cuenta_bancaria_crear_view(request):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.GET
+    if request.method == 'POST':
+        form = CuentaBancariaForm(request.POST)
+        if form.is_valid():
+            banco = form.save()
+            if is_ajax:
+                return JsonResponse({'success': True, 'id': banco.id, 'text': str(banco)})
+            messages.success(request, f'Cuenta {banco} creada exitosamente.')
+            return redirect('tesoreria_lista')
+    else:
+        form = CuentaBancariaForm()
+    
+    return render(request, 'tesoreria/form_banco.html', {'form': form, 'titulo': 'Nueva Cuenta Bancaria', 'is_ajax': is_ajax})
+
+@login_required
+def cuenta_bancaria_editar_view(request, banco_id):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.GET
+    banco = get_object_or_404(CuentaBancaria, id=banco_id)
+    if request.method == 'POST':
+        form = CuentaBancariaForm(request.POST, instance=banco)
+        if form.is_valid():
+            form.save()
+            if is_ajax:
+                return JsonResponse({'success': True, 'id': banco.id, 'text': str(banco)})
+            messages.success(request, f'Cuenta actualizada exitosamente.')
+            return redirect('tesoreria_lista')
+    else:
+        form = CuentaBancariaForm(instance=banco)
+        
+    return render(request, 'tesoreria/form_banco.html', {'form': form, 'titulo': f'Editar Cuenta: {banco}', 'is_ajax': is_ajax})
+
+@login_required
+def cuenta_bancaria_ver_view(request, banco_id):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.GET
+    banco = get_object_or_404(CuentaBancaria, id=banco_id)
+    form = CuentaBancariaForm(instance=banco)
+    return render(request, 'tesoreria/form_banco.html', {'form': form, 'titulo': f'Ver Cuenta: {banco}', 'is_ajax': is_ajax})
