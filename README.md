@@ -29,6 +29,7 @@ El ERP ya cuenta con su **Cimiento Estructural** y **Motor de Operaciones** cons
 4. **Módulo de Ventas (Validación NIIF):** Cierre de ciclo. Configurado con lógica anti-negativos; el sistema ejecuta bloqueos (`ValidationError`) en microsegundos si se intenta facturar material sin saldo en bodegas. Descarga automática del Kardex al confirmar.
 5. **Módulo de Producción (Transformación):** Órdenes de producción para transformar materia prima en producto terminado o retales, moviendo saldos automáticamente en el Kardex al finalizar bajo el formato entrada/salida unificado.
 6. **Módulo de Tesorería (Finanzas):** Cuentas bancarias centralizadas, Cuentas por Cobrar (CxC) integradas directamente con Ventas y Cuentas por Pagar (CxP) conectadas con Compras. Control de flujo de caja y emisión de pagos/recibos auditable.
+7. **Autonomía Frontend (UX/UI Operativa):** Desarrollo de interfaces operativas (Bootstrap 5) desacopladas del panel administrativo. Integra tecnología inteligente de búsqueda predictiva (*Select2*) en todas las llaves transaccionales para automatizar y proteger la selección de items, clientes, cuentas y facturas, asegurando velocidad en los puntos de venta o captura.
 
 ## 4. Documentación Detallada (Diagramas de Flujo)
 
