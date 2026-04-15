@@ -113,22 +113,20 @@
 
     <script>
         $(document).ready(function() {
-            // Inicialización general Select2
-            $('select').select2({ theme: 'bootstrap-5', width: '100%' });
-
             // 1. Decoración Dinámica de Selectores con data-add-url / data-edit-url
-            $('select[data-add-url], select[data-edit-url]').each(function() {
+            // Debe ocurrir ANTES de inicializar Select2 para que Select2 se inyecte correctamente dentro del input-group.
+            $('select[data-add-url], select[data-edit-url], select[data-view-url]').each(function() {
                 let selectElem = $(this);
                 let wrapper = $('<div class="input-group flex-nowrap"></div>');
-                // Select2 wrap
+                
                 selectElem.wrap(wrapper);
                 let inputGroup = selectElem.parent();
                 
-                let btnGroup = $('<div class="btn-group ms-1" role="group"></div>');
+                let btnGroup = $('<div class="input-group-append d-flex h-100"></div>');
                 
                 // Botón Editar
                 if (selectElem.attr('data-edit-url')) {
-                    let btnEdit = $('<button type="button" class="btn btn-outline-secondary btn-sm rounded" title="Editar"><i class="bi bi-pencil"></i></button>');
+                    let btnEdit = $('<button type="button" class="btn btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>');
                     btnEdit.on('click', function(e) {
                         e.preventDefault();
                         if(!selectElem.val()) { alert('Por favor selecciona un registro primero.'); return; }
@@ -140,7 +138,7 @@
                 
                 // Botón Agregar
                 if (selectElem.attr('data-add-url')) {
-                    let btnAdd = $('<button type="button" class="btn btn-outline-success btn-sm rounded ms-1" title="Agregar Nuevo"><i class="bi bi-plus-lg"></i></button>');
+                    let btnAdd = $('<button type="button" class="btn btn-outline-success" title="Agregar Nuevo"><i class="bi bi-plus-lg"></i></button>');
                     btnAdd.on('click', function(e) {
                         e.preventDefault();
                         openRelatedModal(selectElem.attr('data-add-url'), selectElem, "Crear Registro");
@@ -150,7 +148,7 @@
 
                 // Botón Ver
                 if (selectElem.attr('data-view-url')) {
-                    let btnView = $('<button type="button" class="btn btn-outline-info btn-sm rounded ms-1" title="Ver Detalle"><i class="bi bi-eye"></i></button>');
+                    let btnView = $('<button type="button" class="btn btn-outline-info" title="Ver Detalle"><i class="bi bi-eye"></i></button>');
                     btnView.on('click', function(e) {
                         e.preventDefault();
                         if(!selectElem.val()) { alert('Selecciona un registro primero.'); return; }
@@ -162,9 +160,12 @@
 
                 inputGroup.append(btnGroup);
             });
+
+            // 2. Inicialización general Select2 (Ahora asimilará estar dentro del input-group)
+            $('select').select2({ theme: 'bootstrap-5', width: '100%' });
         });
 
-        // 2. Orquestador de peticiones AJAX y renderizado del Modal
+        // 3. Orquestador de peticiones AJAX y renderizado del Modal
         let activeSelectTarget = null;
         let isReadonlyMode = false;
 
