@@ -7,7 +7,7 @@ class FacturaVentaForm(forms.ModelForm):
         model = FacturaVenta
         fields = ['cliente', 'fecha_vencimiento']
         widgets = {
-            'cliente': forms.Select(attrs={'class': 'form-select'}),
+            'cliente': forms.Select(attrs={'class': 'form-select', 'data-add-url': '/terceros/crear/', 'data-edit-url': '/terceros/__id__/editar/', 'data-view-url': '/terceros/__id__/ver/'}),
             'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 

@@ -7,7 +7,7 @@ class FacturaCompraForm(forms.ModelForm):
         model = FacturaCompra
         fields = ['proveedor', 'numero_factura_proveedor', 'fecha_emision', 'fecha_vencimiento']
         widgets = {
-            'proveedor': forms.Select(attrs={'class': 'form-select'}),
+            'proveedor': forms.Select(attrs={'class': 'form-select', 'data-add-url': '/terceros/crear/', 'data-edit-url': '/terceros/__id__/editar/', 'data-view-url': '/terceros/__id__/ver/'}),
             'numero_factura_proveedor': forms.TextInput(attrs={'class': 'form-control'}),
             'fecha_emision': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
