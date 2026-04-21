@@ -1,6 +1,4 @@
-{% if not is_ajax %}
-{% extends 'base.html' %}
-{% endif %}
+{% extends is_ajax|yesno:"base_empty.html,base.html" %}
 
 {% block content %}
 <div class="{% if not is_ajax %}container-fluid{% endif %}">
