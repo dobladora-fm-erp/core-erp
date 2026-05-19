@@ -5,7 +5,7 @@ from .models import CuentaBancaria, CuentaPorCobrar, CuentaPorPagar, PagoRecibid
 
 @admin.register(CuentaBancaria)
 class CuentaBancariaAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'tipo', 'saldo_actual')
+    list_display = ('nombre', 'entidad_bancaria', 'tipo_cuenta', 'saldo_actual')
     # Bloqueamos la edición manual del saldo para evitar fraudes
     readonly_fields = ('saldo_actual',)
 
@@ -31,26 +31,6 @@ class PagoRecibidoAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    def save_model(self, request, obj, form, change):
-        if not obj.pk: # Solo si es un pago nuevo
-            with transaction.atomic():
-                if obj.monto > obj.cuenta_por_cobrar.saldo_pendiente:
-                    raise ValidationError("El pago no puede ser mayor al saldo pendiente.")
-                
-                # 1. Bajar saldo a la deuda
-                cxc = obj.cuenta_por_cobrar
-                cxc.saldo_pendiente -= obj.monto
-                if cxc.saldo_pendiente <= 0:
-                    cxc.estado = 'Pagada'
-                cxc.save(update_fields=['saldo_pendiente', 'estado'])
-                
-                # 2. Subir plata al banco
-                banco = obj.cuenta_destino
-                banco.saldo_actual += obj.monto
-                banco.save(update_fields=['saldo_actual'])
-                
-            super().save_model(request, obj, form, change)
-
 @admin.register(PagoEmitido)
 class PagoEmitidoAdmin(admin.ModelAdmin):
     list_display = ('cuenta_por_pagar', 'monto', 'cuenta_origen', 'fecha_pago')
@@ -60,23 +40,3 @@ class PagoEmitidoAdmin(admin.ModelAdmin):
         return False # Pagos inmutables
     def has_delete_permission(self, request, obj=None):
         return False
-
-    def save_model(self, request, obj, form, change):
-        if not obj.pk: # Solo si es un pago nuevo
-            with transaction.atomic():
-                if obj.monto > obj.cuenta_por_pagar.saldo_pendiente:
-                    raise ValidationError("El pago no puede ser mayor a la deuda.")
-                
-                # 1. Bajar saldo a la deuda
-                cxp = obj.cuenta_por_pagar
-                cxp.saldo_pendiente -= obj.monto
-                if cxp.saldo_pendiente <= 0:
-                    cxp.estado = 'Pagada'
-                cxp.save(update_fields=['saldo_pendiente', 'estado'])
-                
-                # 2. Restar plata del banco
-                banco = obj.cuenta_origen
-                banco.saldo_actual -= obj.monto
-                banco.save(update_fields=['saldo_actual'])
-                
-            super().save_model(request, obj, form, change)

@@ -4,11 +4,12 @@ from .models import PagoRecibido, PagoEmitido, CuentaPorCobrar, CuentaPorPagar, 
 class CuentaBancariaForm(forms.ModelForm):
     class Meta:
         model = CuentaBancaria
-        fields = ['nombre', 'tipo', 'numero_cuenta']
+        fields = ['nombre', 'entidad_bancaria', 'tipo_cuenta', 'numero_cuenta']
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'tipo': forms.Select(attrs={'class': 'form-select'}),
-            'numero_cuenta': forms.TextInput(attrs={'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Caja Mayor, Cuenta Principal'}),
+            'entidad_bancaria': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Bancolombia (Opcional)'}),
+            'tipo_cuenta': forms.Select(attrs={'class': 'form-select'}),
+            'numero_cuenta': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 123-456789-01 (Opcional)'}),
         }
 
 class PagoRecibidoForm(forms.ModelForm):

@@ -18,10 +18,17 @@
             {% endif %}
         </div>
         <div class="mb-3">
+            <label class="form-label text-muted fw-bold">Entidad Bancaria</label>
+            {{ form.entidad_bancaria }}
+            {% if form.entidad_bancaria.errors %}
+            <div class="text-danger small mt-1">{{ form.entidad_bancaria.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
             <label class="form-label text-muted fw-bold">Tipo de Cuenta</label>
-            {{ form.tipo }}
-            {% if form.tipo.errors %}
-            <div class="text-danger small mt-1">{{ form.tipo.errors }}</div>
+            {{ form.tipo_cuenta }}
+            {% if form.tipo_cuenta.errors %}
+            <div class="text-danger small mt-1">{{ form.tipo_cuenta.errors }}</div>
             {% endif %}
         </div>
         <div class="mb-4">

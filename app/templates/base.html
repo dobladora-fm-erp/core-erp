@@ -216,6 +216,12 @@
                     body: formData
                 })
                 .then(res => {
+                    if (res.status === 400) {
+                        return res.json().then(data => {
+                            displayFormErrors(form, data.errors);
+                            throw new Error("Form validation failed");
+                        });
+                    }
                     if(res.ok && res.headers.get('content-type').includes('application/json')) {
                         return res.json();
                     } else {
@@ -224,7 +230,7 @@
                     }
                 })
                 .then(data => {
-                    if (data.success) {
+                    if (data && data.success) {
                         // Actualizar Select2 Original
                         let newOption = new Option(data.text, data.id, true, true);
                         if (activeSelectTarget.find(`option[value="${data.id}"]`).length > 0) {
@@ -236,15 +242,55 @@
                         bootstrap.Modal.getInstance(document.getElementById('relatedLookupModal')).hide();
                     }
                 })
-                .catch(errHtml => {
-                    if (typeof errHtml === 'string') {
-                        $('#relatedLookupModalBody').html(errHtml);
+                .catch(err => {
+                    if (err.message === "Form validation failed") {
+                        // Ya manejado y pintado
+                        return;
+                    }
+                    if (typeof err === 'string') {
+                        $('#relatedLookupModalBody').html(err);
                         bindModalFormEvents(url); // Reenlazar si devuelve el formulario con lineas rojas
                     } else {
                         alert("Error inesperado al guardar.");
                     }
                 });
             });
+        }
+
+        function displayFormErrors(form, errors) {
+            // Limpiar errores e invalidaciones previas
+            form.find('.text-danger.small').remove();
+            form.find('.alert-danger').remove();
+            form.find('.is-invalid').removeClass('is-invalid');
+            
+            // Recorrer errores de campo
+            for (let fieldName in errors) {
+                let fieldErrors = errors[fieldName];
+                let inputElem = form.find(`[name="${fieldName}"]`);
+                
+                // Formatear mensaje de error
+                let errorText = '';
+                if (Array.isArray(fieldErrors)) {
+                    errorText = fieldErrors.map(e => typeof e === 'object' ? e.message : e).join('<br>');
+                } else {
+                    errorText = fieldErrors;
+                }
+                
+                if (inputElem.length > 0) {
+                    inputElem.addClass('is-invalid');
+                    let errorDiv = $(`<div class="text-danger small mt-1">${errorText}</div>`);
+                    
+                    // Colocar después de select2 si aplica
+                    if (inputElem.hasClass('select2-hidden-accessible')) {
+                        inputElem.next('.select2-container').after(errorDiv);
+                    } else {
+                        inputElem.after(errorDiv);
+                    }
+                } else {
+                    // Errores generales/formulario completo (__all__)
+                    form.prepend(`<div class="alert alert-danger text-danger small mb-3">${errorText}</div>`);
+                }
+            }
         }
     </script>
 </body>

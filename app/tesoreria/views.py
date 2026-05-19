@@ -64,6 +64,9 @@ def cuenta_bancaria_crear_view(request):
                 return JsonResponse({'success': True, 'id': banco.id, 'text': str(banco)})
             messages.success(request, f'Cuenta {banco} creada exitosamente.')
             return redirect('tesoreria_lista')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
     else:
         form = CuentaBancariaForm()
     
@@ -81,6 +84,9 @@ def cuenta_bancaria_editar_view(request, banco_id):
                 return JsonResponse({'success': True, 'id': banco.id, 'text': str(banco)})
             messages.success(request, f'Cuenta actualizada exitosamente.')
             return redirect('tesoreria_lista')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
     else:
         form = CuentaBancariaForm(instance=banco)
         

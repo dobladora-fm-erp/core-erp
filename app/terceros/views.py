@@ -21,6 +21,9 @@ def tercero_crear_view(request):
                 return JsonResponse({'success': True, 'id': tercero.id, 'text': str(tercero)})
             messages.success(request, f'Tercero {tercero} creado exitosamente.')
             return redirect('terceros_lista')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
     else:
         form = TerceroForm()
     
@@ -38,6 +41,9 @@ def tercero_editar_view(request, tercero_id):
                 return JsonResponse({'success': True, 'id': tercero.id, 'text': str(tercero)})
             messages.success(request, f'Tercero actualizado exitosamente.')
             return redirect('terceros_lista')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
     else:
         form = TerceroForm(instance=tercero)
     
