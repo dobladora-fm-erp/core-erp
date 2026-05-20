@@ -5,10 +5,25 @@
         <h2 class="text-secondary m-0">
             <i class="bi bi-receipt text-primary"></i> Comprobante de Venta: {% if factura.numero_factura %}{{ factura.numero_factura }}{% else %}S/N{% endif %}
         </h2>
-        <span class="badge bg-primary fs-5 px-3 py-2">
-            Confirmada & Contabilizada
-        </span>
+        <div>
+            {% if factura.anulada %}
+            <span class="badge bg-danger fs-5 px-3 py-2">
+                FACTURA ANULADA
+            </span>
+            {% else %}
+            <span class="badge bg-primary fs-5 px-3 py-2 me-2">
+                Confirmada & Contabilizada
+            </span>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#anularModal"><i class="bi bi-x-octagon"></i> Anular Factura</button>
+            {% endif %}
+        </div>
     </div>
+    
+    {% if factura.anulada %}
+    <div class="alert alert-danger text-center fs-4 fw-bold py-4 mb-4">
+        <i class="bi bi-exclamation-triangle"></i> FACTURA ANULADA
+    </div>
+    {% endif %}
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-light fw-bold text-secondary">
@@ -69,5 +84,28 @@
         <a href="{% url 'ventas_lista' %}" class="btn btn-outline-secondary shadow-sm"><i
                 class="bi bi-arrow-left me-2"></i>Volver al Historial de Ventas</a>
     </div>
+    <!-- Modal Anular -->
+    {% if not factura.anulada %}
+    <div class="modal fade" id="anularModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{% url 'venta_anular' factura.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Anular Factura</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body fs-5">
+                        Esta acción devolverá el stock a la bodega y cancelará la deuda. ¿Está completamente seguro?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Sí, Anular Venta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

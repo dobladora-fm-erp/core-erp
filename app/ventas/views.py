@@ -105,3 +105,55 @@ def venta_detalle_view(request, factura_id):
         'factura': factura,
         'detalles': detalles
     })
+
+@login_required
+@transaction.atomic
+def anular_venta_view(request, factura_id):
+    factura = get_object_or_404(FacturaVenta, id=factura_id)
+    
+    if request.method == 'POST':
+        if factura.anulada:
+            messages.error(request, 'La factura ya ha sido anulada previamente.')
+            return redirect('venta_detalle', factura_id=factura.id)
+            
+        # Revisar si hay CuentaPorCobrar con PagosRecibidos
+        if hasattr(factura, 'cuentaporcobrar') and factura.cuentaporcobrar.pagorecibido_set.exists():
+            messages.error(request, 'No se puede anular la factura porque ya existen pagos registrados (dinero en banco).')
+            return redirect('venta_detalle', factura_id=factura.id)
+
+        # 1. Marcar como anulada
+        factura.anulada = True
+        factura.estado = 'Anulada'
+        factura.save()
+        
+        # 2. Eliminar la CuentaPorCobrar
+        if hasattr(factura, 'cuentaporcobrar'):
+            factura.cuentaporcobrar.delete()
+            
+        # 3. Devolver inventario y generar movimientos
+        for detalle in factura.detalles.all():
+            # Restaurar stock
+            inv_bodega, _ = InventarioBodega.objects.get_or_create(
+                item=detalle.item, 
+                bodega=detalle.bodega_origen,
+                defaults={'cantidad_actual': 0}
+            )
+            inv_bodega.cantidad_actual += detalle.cantidad
+            inv_bodega.save()
+            
+            # Movimiento KARDEX de anulación
+            MovimientoInventario.objects.create(
+                item=detalle.item,
+                bodega_origen=None,
+                bodega_destino=detalle.bodega_origen,
+                tipo_movimiento='Entrada',
+                cantidad=detalle.cantidad,
+                costo_unitario=detalle.item.costo_promedio,
+                concepto=f"Entrada por Anulación Factura {factura.numero_factura}",
+                usuario=request.user
+            )
+
+        messages.success(request, f'La factura {factura.numero_factura} fue anulada correctamente. Inventario devuelto y cartera cancelada.')
+        return redirect('ventas_lista')
+        
+    return redirect('venta_detalle', factura_id=factura.id)
