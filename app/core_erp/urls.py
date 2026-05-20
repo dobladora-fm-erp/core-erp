@@ -17,7 +17,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from inventario.views import InventarioAPIView
-from core.views import dashboard_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +26,6 @@ urlpatterns = [
     path('compras/', include('compras.urls')),
     path('ventas/', include('ventas.urls')),
     path('produccion/', include('produccion.urls')),
-    path('tesoreria/', include('tesoreria.urls')),  # NUEVA RUTA
-    path('', dashboard_view, name='dashboard'),  # Ruta raíz
+    path('tesoreria/', include('tesoreria.urls')),
+    path('', include('core.urls')),
 ]

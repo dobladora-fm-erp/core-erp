@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-wallet2 text-primary"></i> Reporte de Cartera</h2>
+        <div>
+            <a href="{% url 'exportar_cartera_csv' %}" class="btn btn-success me-2"><i class="bi bi-file-earmark-excel"></i> Exportar CSV</a>
+            <a href="{% url 'centro_reportes' %}" class="btn btn-outline-secondary">Volver al Centro de Reportes</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tercero</th>
+                            <th>Identificación</th>
+                            <th class="text-end">Cuentas por Cobrar (CxC)</th>
+                            <th class="text-end">Cuentas por Pagar (CxP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tercero in terceros_cartera %}
+                        <tr>
+                            <td>{{ tercero.razon_social|default:tercero.nombres }} {{ tercero.apellidos|default:"" }}</td>
+                            <td>{{ tercero.numero_identificacion }}</td>
+                            <td class="text-end text-success fw-bold">${{ tercero.cxc_total|default:"0.00" }}</td>
+                            <td class="text-end text-danger fw-bold">${{ tercero.cxp_total|default:"0.00" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No hay cartera activa (ni CxC ni CxP) actualmente.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
