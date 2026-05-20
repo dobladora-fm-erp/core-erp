@@ -12,14 +12,15 @@ class FacturaVentaForm(forms.ModelForm):
         }
 
 class DetalleVentaForm(forms.ModelForm):
+    cantidad = forms.DecimalField(localize=True, widget=forms.TextInput(attrs={'class': 'form-control form-control-sm cantidad-input'}))
+    precio_unitario = forms.DecimalField(localize=True, widget=forms.TextInput(attrs={'class': 'form-control form-control-sm precio-input'}))
+
     class Meta:
         model = DetalleVenta
         fields = ['item', 'bodega_origen', 'cantidad', 'precio_unitario']
         widgets = {
             'item': forms.Select(attrs={'class': 'form-select form-control-sm item-select'}),
             'bodega_origen': forms.Select(attrs={'class': 'form-select form-control-sm'}),
-            'cantidad': forms.NumberInput(attrs={'class': 'form-control form-control-sm cantidad-input', 'step': '0.01', 'min': '0.01'}),
-            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control form-control-sm precio-input', 'step': '0.01', 'min': '0'}),
         }
 
 DetalleVentaFormSet = inlineformset_factory(

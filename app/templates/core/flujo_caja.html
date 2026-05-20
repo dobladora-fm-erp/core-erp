@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container mt-4">
@@ -15,7 +16,7 @@
             <div class="card border-0 border-start border-success border-4 shadow-sm h-100 py-2">
                 <div class="card-body">
                     <p class="text-xs font-weight-bold text-success text-uppercase mb-1">Ingresos (Pagos Recibidos)</p>
-                    <div class="h3 mb-0 font-weight-bold text-gray-800">${{ pagos_recibidos|default:"0.00"|floatformat:2 }}</div>
+                    <div class="h3 mb-0 font-weight-bold text-gray-800">${{ pagos_recibidos|default:"0.00"|floatformat:2|intcomma }}</div>
                 </div>
             </div>
         </div>
@@ -23,7 +24,7 @@
             <div class="card border-0 border-start border-danger border-4 shadow-sm h-100 py-2">
                 <div class="card-body">
                     <p class="text-xs font-weight-bold text-danger text-uppercase mb-1">Egresos (Pagos Emitidos)</p>
-                    <div class="h3 mb-0 font-weight-bold text-gray-800">${{ pagos_emitidos|default:"0.00"|floatformat:2 }}</div>
+                    <div class="h3 mb-0 font-weight-bold text-gray-800">${{ pagos_emitidos|default:"0.00"|floatformat:2|intcomma }}</div>
                 </div>
             </div>
         </div>
@@ -32,7 +33,7 @@
                 <div class="card-body">
                     <p class="text-xs font-weight-bold text-primary text-uppercase mb-1">Flujo Neto Mensual</p>
                     <div class="h3 mb-0 font-weight-bold {% if flujo_neto < 0 %}text-danger{% else %}text-success{% endif %}">
-                        ${{ flujo_neto|default:"0.00"|floatformat:2 }}
+                        ${{ flujo_neto|default:"0.00"|floatformat:2|intcomma }}
                     </div>
                 </div>
             </div>

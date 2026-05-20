@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container-fluid">
@@ -32,7 +33,7 @@
                                     {{ saldo.cantidad_actual }} {{ saldo.item.unidad_medida_base.abreviatura }}
                                 </span>
                             </td>
-                            <td class="text-success fw-bold">$ {{ saldo.item.costo_promedio }}</td>
+                            <td class="text-success fw-bold">$ {{ saldo.item.costo_promedio|intcomma }}</td>
                         </tr>
                         {% empty %}
                         <tr>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container mt-4">
@@ -31,8 +32,8 @@
                             <td>{{ inv.item.codigo_sku }}</td>
                             <td>{{ inv.bodega.nombre }}</td>
                             <td class="text-end">{{ inv.cantidad_actual }}</td>
-                            <td class="text-end">${{ inv.item.costo_promedio }}</td>
-                            <td class="text-end fw-bold">${{ inv.valor_total|floatformat:2 }}</td>
+                            <td class="text-end">${{ inv.item.costo_promedio|intcomma }}</td>
+                            <td class="text-end fw-bold">${{ inv.valor_total|floatformat:2|intcomma }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -43,7 +44,7 @@
                     <tfoot>
                         <tr class="table-light fw-bold">
                             <td colspan="5" class="text-end">Total General Inventario:</td>
-                            <td class="text-end text-success">${{ total_general|floatformat:2 }}</td>
+                            <td class="text-end text-success">${{ total_general|floatformat:2|intcomma }}</td>
                         </tr>
                     </tfoot>
                 </table>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -56,8 +57,7 @@
                             <div>
                                 <i class="bi bi-gem me-2 text-success"></i><strong>{{ producto.item.nombre }}</strong>
                                 <div class="small text-muted"><i class="bi bi-shop me-1"></i>{{
-                                    producto.bodega_destino.nombre }} | Costo U: $ {{ producto.costo_unitario_asignado
-                                    }}</div>
+                                    producto.bodega_destino.nombre }} | Costo U: $ {{ producto.costo_unitario_asignado|intcomma }}</div>
                             </div>
                             <span class="badge bg-success rounded-pill px-3 py-2">+ {{ producto.cantidad }}</span>
                         </li>

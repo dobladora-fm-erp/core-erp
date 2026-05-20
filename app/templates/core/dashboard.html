@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container-fluid">
@@ -15,7 +16,7 @@
                 <div class="card-body text-center">
                     <h5 class="card-title text-primary"><i class="bi bi-cash-coin fs-1"></i></h5>
                     <h6 class="card-subtitle mb-2 text-muted">Ingresos del Mes</h6>
-                    <h3 class="card-text">$ {{ ingresos_mes|floatformat:2 }}</h3>
+                    <h3 class="card-text">$ {{ ingresos_mes|floatformat:2|intcomma }}</h3>
                 </div>
             </div>
         </div>
@@ -24,7 +25,7 @@
                 <div class="card-body text-center">
                     <h5 class="card-title text-danger"><i class="bi bi-receipt fs-1"></i></h5>
                     <h6 class="card-subtitle mb-2 text-muted">Cuentas por Pagar</h6>
-                    <h3 class="card-text">$ {{ cxp_total|floatformat:2 }}</h3>
+                    <h3 class="card-text">$ {{ cxp_total|floatformat:2|intcomma }}</h3>
                 </div>
             </div>
         </div>
@@ -33,7 +34,7 @@
                 <div class="card-body text-center">
                     <h5 class="card-title text-success"><i class="bi bi-graph-up-arrow fs-1"></i></h5>
                     <h6 class="card-subtitle mb-2 text-muted">Cuentas por Cobrar</h6>
-                    <h3 class="card-text">$ {{ cxc_total|floatformat:2 }}</h3>
+                    <h3 class="card-text">$ {{ cxc_total|floatformat:2|intcomma }}</h3>
                 </div>
             </div>
         </div>

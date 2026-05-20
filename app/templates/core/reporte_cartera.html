@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container mt-4">
@@ -27,8 +28,8 @@
                         <tr>
                             <td>{{ tercero.razon_social|default:tercero.nombres }} {{ tercero.apellidos|default:"" }}</td>
                             <td>{{ tercero.numero_identificacion }}</td>
-                            <td class="text-end text-success fw-bold">${{ tercero.cxc_total|default:"0.00" }}</td>
-                            <td class="text-end text-danger fw-bold">${{ tercero.cxp_total|default:"0.00" }}</td>
+                            <td class="text-end text-success fw-bold">${{ tercero.cxc_total|default:"0.00"|intcomma }}</td>
+                            <td class="text-end text-danger fw-bold">${{ tercero.cxp_total|default:"0.00"|intcomma }}</td>
                         </tr>
                         {% empty %}
                         <tr>
