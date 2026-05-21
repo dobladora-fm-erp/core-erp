@@ -75,9 +75,18 @@ class Tercero(models.Model):
             self.nombres = ''
             self.apellidos = ''
         elif self.tipo_persona == 'Natural':
-            if not self.nombres or not self.apellidos:
-                raise ValidationError("Nombres y apellidos son obligatorios para personas naturales.")
+            errors = {}
+            if not self.nombres:
+                errors['nombres'] = 'Los nombres son obligatorios para personas naturales.'
+            if not self.apellidos:
+                errors['apellidos'] = 'Los apellidos son obligatorios para personas naturales.'
+            if errors:
+                raise ValidationError(errors)
             self.razon_social = ''
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.razon_social:
