@@ -54,4 +54,6 @@ def tercero_ver_view(request, tercero_id):
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'ajax' in request.GET
     tercero = get_object_or_404(Tercero, id=tercero_id)
     form = TerceroForm(instance=tercero)
+    for field in form.fields.values():
+        field.disabled = True
     return render(request, 'terceros/form_tercero.html', {'form': form, 'titulo': f'Ver Tercero: {tercero}', 'is_ajax': is_ajax})

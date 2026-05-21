@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from core.models import Municipio
 
 class Tercero(models.Model):
@@ -65,6 +66,18 @@ class Tercero(models.Model):
     )
     fecha_ultima_validacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Última Validación")
     requiere_atencion_contador = models.BooleanField(default=False, verbose_name="Requiere Atención Contador")
+
+    def clean(self):
+        super().clean()
+        if self.tipo_persona == 'Juridica':
+            if not self.razon_social:
+                raise ValidationError({'razon_social': 'La razón social es obligatoria para personas jurídicas.'})
+            self.nombres = ''
+            self.apellidos = ''
+        elif self.tipo_persona == 'Natural':
+            if not self.nombres or not self.apellidos:
+                raise ValidationError("Nombres y apellidos son obligatorios para personas naturales.")
+            self.razon_social = ''
 
     def __str__(self):
         if self.razon_social:
