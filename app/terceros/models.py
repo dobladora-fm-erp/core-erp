@@ -68,25 +68,15 @@ class Tercero(models.Model):
     requiere_atencion_contador = models.BooleanField(default=False, verbose_name="Requiere Atención Contador")
 
     def clean(self):
-        super().clean()
         if self.tipo_persona == 'Juridica':
             if not self.razon_social:
-                raise ValidationError({'razon_social': 'La razón social es obligatoria para personas jurídicas.'})
-            self.nombres = ''
-            self.apellidos = ''
+                raise ValidationError({'razon_social': 'La Razón Social es obligatoria para personas jurídicas.'})
+            self.nombres = None
+            self.apellidos = None
         elif self.tipo_persona == 'Natural':
-            errors = {}
-            if not self.nombres:
-                errors['nombres'] = 'Los nombres son obligatorios para personas naturales.'
-            if not self.apellidos:
-                errors['apellidos'] = 'Los apellidos son obligatorios para personas naturales.'
-            if errors:
-                raise ValidationError(errors)
-            self.razon_social = ''
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+            if not self.nombres or not self.apellidos:
+                raise ValidationError('Nombres y Apellidos son obligatorios para personas naturales.')
+            self.razon_social = None
 
     def __str__(self):
         if self.razon_social:
