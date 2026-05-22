@@ -11,7 +11,10 @@ class TerceroAdmin(admin.ModelAdmin):
         'validacion_api_estado'
     )
     search_fields = ('numero_identificacion', 'razon_social', 'nombres', 'apellidos')
-    list_filter = ('es_cliente', 'es_proveedor', 'es_empleado', 'validacion_api_estado', 'tipo_persona' , 'tipo_documento')
+    list_filter = ('tipo_persona', 'tipo_documento', 'es_cliente', 'es_proveedor', 'es_empleado', 'validacion_api_estado')
+    
+    class Media:
+        js = ('js/admin_tercero.js',)
 
     def save_model(self, request, obj, form, change):
         # Additional custom logic if required could go here

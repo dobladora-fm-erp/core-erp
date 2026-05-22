@@ -71,12 +71,14 @@ class Tercero(models.Model):
         if self.tipo_persona == 'Juridica':
             if not self.razon_social:
                 raise ValidationError({'razon_social': 'La Razón Social es obligatoria para personas jurídicas.'})
-            self.nombres = None
-            self.apellidos = None
+            if self.nombres or self.apellidos:
+                raise ValidationError('Error: Una persona jurídica no puede tener Nombres ni Apellidos registrados. Por favor, borre esos campos o cambie el tipo a Persona Natural.')
+                
         elif self.tipo_persona == 'Natural':
             if not self.nombres or not self.apellidos:
                 raise ValidationError('Nombres y Apellidos son obligatorios para personas naturales.')
-            self.razon_social = None
+            if self.razon_social:
+                raise ValidationError({'razon_social': 'Error: Una persona natural no debe tener Razón Social registrada. Por favor, borre este campo o cambie el tipo a Persona Jurídica.'})
 
     def __str__(self):
         if self.razon_social:
