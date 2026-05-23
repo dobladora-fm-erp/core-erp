@@ -39,7 +39,7 @@ def venta_crear_view(request):
                     factura.fecha_emision = timezone.now().date()
                     factura.estado = 'Confirmada'
                     factura.subtotal = Decimal('0.00')
-                    factura.iva = Decimal('0.00')
+                    factura.impuestos = Decimal('0.00')
                     factura.total = Decimal('0.00')
                     factura.save()
                     
@@ -51,27 +51,28 @@ def venta_crear_view(request):
                         detalle.subtotal = detalle.cantidad * detalle.precio_unitario
                         
                         # Validar Stock y descontar Kardex
-                        inv_bodega = InventarioBodega.objects.select_for_update().filter(
-                            item=detalle.item, 
-                            bodega=detalle.bodega_origen
-                        ).first()
-                        
-                        if not inv_bodega or inv_bodega.cantidad_actual < detalle.cantidad:
-                            disp = inv_bodega.cantidad_actual if inv_bodega else 0
-                            raise ValueError(f"Stock insuficiente de {detalle.item.nombre} en la bodega seleccionada. (Disponible: {disp})")
-                        
-                        inv_bodega.cantidad_actual -= detalle.cantidad
-                        inv_bodega.save()
-                        
-                        MovimientoInventario.objects.create(
-                            item=detalle.item,
-                            bodega_origen=detalle.bodega_origen,
-                            tipo_movimiento='Salida',
-                            cantidad=detalle.cantidad,
-                            costo_unitario=detalle.item.costo_promedio, # Se cruza el costo promedio real de inventario y NO el precio de venta para balance de KARDEX
-                            concepto=f"Factura Venta {factura.numero_factura}",
-                            usuario=request.user
-                        )
+                        if detalle.item.maneja_inventario:
+                            inv_bodega = InventarioBodega.objects.select_for_update().filter(
+                                item=detalle.item, 
+                                bodega=detalle.bodega_origen
+                            ).first()
+                            
+                            if not inv_bodega or inv_bodega.cantidad_actual < detalle.cantidad:
+                                disp = inv_bodega.cantidad_actual if inv_bodega else 0
+                                raise ValueError(f"Stock insuficiente de {detalle.item.nombre} en la bodega seleccionada. (Disponible: {disp})")
+                            
+                            inv_bodega.cantidad_actual -= detalle.cantidad
+                            inv_bodega.save()
+                            
+                            MovimientoInventario.objects.create(
+                                item=detalle.item,
+                                bodega_origen=detalle.bodega_origen,
+                                tipo_movimiento='Salida',
+                                cantidad=detalle.cantidad,
+                                costo_unitario=detalle.item.costo_promedio, # Se cruza el costo promedio real de inventario y NO el precio de venta para balance de KARDEX
+                                concepto=f"Factura Venta {factura.numero_factura}",
+                                usuario=request.user
+                            )
                         
                         detalle.save()
                         subtotal_factura += detalle.subtotal
@@ -80,8 +81,8 @@ def venta_crear_view(request):
                         detalle_borrado.delete()
                     
                     factura.subtotal = subtotal_factura
-                    factura.iva = factura.subtotal * Decimal('0.19') # IVA 19%
-                    factura.total = factura.subtotal + factura.iva
+                    factura.impuestos = factura.subtotal * Decimal('0.19') # IVA 19%
+                    factura.total = factura.subtotal + factura.impuestos
                     factura.save()
 
                     messages.success(request, f'Factura {factura.numero_factura} registrada. Stock descontado y cuenta por cobrar generada exitosamente.')

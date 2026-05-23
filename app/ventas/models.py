@@ -17,6 +17,18 @@ class FacturaVenta(models.Model):
     procesada = models.BooleanField(default=False, editable=False)
     anulada = models.BooleanField(default=False)
 
+    # Facturación Electrónica DIAN
+    cufe = models.CharField(max_length=150, unique=True, null=True, blank=True, verbose_name="CUFE")
+    cadena_qr = models.TextField(null=True, blank=True, verbose_name="Cadena QR")
+    xml_dian = models.FileField(upload_to='dian_xmls/', null=True, blank=True, verbose_name="XML DIAN")
+    DIAN_ESTADO_CHOICES = [
+        ('No Enviada', 'No Enviada'),
+        ('Aceptada', 'Aceptada'),
+        ('Rechazada', 'Rechazada'),
+    ]
+    dian_estado = models.CharField(max_length=20, choices=DIAN_ESTADO_CHOICES, default='No Enviada', verbose_name="Estado DIAN")
+    dian_fecha_validacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Validación DIAN")
+
     def __str__(self):
         return f"Factura {self.numero_factura} - {self.cliente}"
 
