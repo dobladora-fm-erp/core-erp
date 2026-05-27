@@ -41,12 +41,16 @@ def compra_crear_view(request):
                     
                     detalles = formset.save(commit=False)
                     subtotal_factura = Decimal('0.00')
+                    total_impuestos = Decimal('0.00')
                     
                     for detalle in detalles:
                         detalle.factura = factura
                         detalle.subtotal = detalle.cantidad * detalle.costo_unitario
                         detalle.save()
                         subtotal_factura += detalle.subtotal
+                        
+                        impuesto_linea = detalle.subtotal * (detalle.item.porcentaje_iva / Decimal('100.00'))
+                        total_impuestos += impuesto_linea
                         
                         item = detalle.item
                         
@@ -86,7 +90,7 @@ def compra_crear_view(request):
                         detalle_borrado.delete()
                     
                     factura.subtotal = subtotal_factura
-                    factura.impuestos = factura.subtotal * Decimal('0.19') # IVA 19%
+                    factura.impuestos = total_impuestos
                     factura.total = factura.subtotal + factura.impuestos
                     factura.save()
 
@@ -141,6 +145,16 @@ def compra_anular_view(request, factura_id):
                     defaults={'cantidad_actual': Decimal('0.00')}
                 )
                 inv_bodega.cantidad_actual -= detalle.cantidad
+                
+                stock_despues_restar = inv_bodega.cantidad_actual
+                stock_con_compra_erronea = stock_despues_restar + detalle.cantidad
+                
+                if stock_despues_restar > 0:
+                    # Despejar la fórmula del promedio ponderado para hallar el costo anterior
+                    costo_reversado = ((stock_con_compra_erronea * detalle.item.costo_promedio) - (detalle.cantidad * detalle.costo_unitario)) / stock_despues_restar
+                    detalle.item.costo_promedio = costo_reversado
+                    detalle.item.save()
+                    
                 inv_bodega.save()
                 
                 MovimientoInventario.objects.create(

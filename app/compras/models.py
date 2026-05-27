@@ -42,7 +42,7 @@ class FacturaCompra(models.Model):
 class DetalleCompra(models.Model):
     factura = models.ForeignKey(FacturaCompra, related_name='detalles', on_delete=models.CASCADE, verbose_name="Factura")
     item = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name="Ítem")
-    bodega_destino = models.ForeignKey(Bodega, on_delete=models.PROTECT, verbose_name="Bodega de Destino")
+    bodega_destino = models.ForeignKey(Bodega, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Bodega de Destino")
 
     cantidad = models.DecimalField(max_digits=12, decimal_places=4, verbose_name="Cantidad")
     costo_unitario = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Costo Unitario")
