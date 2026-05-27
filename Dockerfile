@@ -9,9 +9,9 @@ ENV PYTHONUNBUFFERED=1
 # Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Instalamos dependencias del sistema necesarias para PostgreSQL
+# Instalamos dependencias del sistema necesarias para PostgreSQL y Generación PDF
 RUN apt-get update \
-    && apt-get install -y gcc libpq-dev \
+    && apt-get install -y gcc libpq-dev pkg-config libcairo2-dev \
     && apt-get clean
 
 # Copiamos e instalamos las librerías de Python

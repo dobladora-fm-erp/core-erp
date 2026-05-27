@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from .utils import render_to_pdf
 from django.contrib.auth.decorators import login_required
 from .models import FacturaVenta, DetalleVenta
 from .forms import FacturaVentaForm, DetalleVentaFormSet
@@ -158,3 +160,23 @@ def anular_venta_view(request, factura_id):
         return redirect('ventas_lista')
         
     return redirect('venta_detalle', factura_id=factura.id)
+
+@login_required
+def venta_pdf_view(request, factura_id):
+    factura = get_object_or_404(FacturaVenta, id=factura_id)
+    detalles = factura.detalles.all()
+    
+    context = {
+        'factura': factura,
+        'detalles': detalles,
+    }
+    
+    pdf = render_to_pdf('ventas/factura_pdf.html', context)
+    if pdf:
+        response = pdf
+        filename = f"Factura_FM_{factura.numero_factura}.pdf"
+        content = f"inline; filename={filename}"
+        response['Content-Disposition'] = content
+        return response
+    return HttpResponse("Error Rendering PDF", status=400)
+

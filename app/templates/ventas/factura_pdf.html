@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura de Venta</title>
+    <style>
+        @page {
+            size: a4;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24pt;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 10pt;
+        }
+        .client-info, .invoice-info {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .client-info td, .invoice-info td {
+            padding: 5px;
+        }
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table.items th, table.items td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        table.items th {
+            background-color: #f2f2f2;
+        }
+        .totals {
+            width: 50%;
+            float: right;
+            border-collapse: collapse;
+        }
+        .totals th, .totals td {
+            padding: 5px;
+            text-align: right;
+            border-bottom: 1px solid #ccc;
+        }
+        .dian-box {
+            clear: both;
+            margin-top: 50px;
+            border: 1px dashed #666;
+            padding: 20px;
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DOBLADORA FM SAS</h1>
+        <p>NIT: 900.123.456-7 | Dirección: Calle Falsa 123, Bogotá | Tel: (601) 555-0123</p>
+    </div>
+
+    <table class="invoice-info">
+        <tr>
+            <td><strong>Factura Electrónica de Venta No:</strong> {{ factura.numero_factura }}</td>
+            <td style="text-align: right;"><strong>Fecha de Emisión:</strong> {{ factura.fecha_emision|date:"d M Y" }}</td>
+        </tr>
+        <tr>
+            <td><strong>Estado:</strong> {{ factura.estado }}</td>
+            <td style="text-align: right;"><strong>Vencimiento:</strong> {{ factura.fecha_vencimiento|date:"d M Y" }}</td>
+        </tr>
+    </table>
+
+    <table class="client-info">
+        <tr>
+            <td><strong>Cliente:</strong> {% if factura.cliente.razon_social %}{{ factura.cliente.razon_social }}{% else %}{{ factura.cliente.nombres }} {{ factura.cliente.apellidos }}{% endif %}</td>
+        </tr>
+        <tr>
+            <td><strong>Identificación:</strong> {{ factura.cliente.numero_identificacion }}</td>
+        </tr>
+    </table>
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th>Código/Ítem</th>
+                <th>Cant.</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% load humanize %}
+            {% for detalle in detalles %}
+            <tr>
+                <td>{{ detalle.item.nombre }}</td>
+                <td style="text-align: center;">{{ detalle.cantidad }}</td>
+                <td style="text-align: right;">$ {{ detalle.precio_unitario|intcomma }}</td>
+                <td style="text-align: right;">$ {{ detalle.subtotal|intcomma }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <th>Subtotal Base:</th>
+            <td>$ {{ factura.subtotal|intcomma }}</td>
+        </tr>
+        <tr>
+            <th>Impuestos (IVA 19%):</th>
+            <td>$ {{ factura.impuestos|intcomma }}</td>
+        </tr>
+        <tr>
+            <th><strong>Total a Pagar:</strong></th>
+            <td><strong>$ {{ factura.total|intcomma }}</strong></td>
+        </tr>
+    </table>
+
+    <div class="dian-box">
+        <p><strong>[ Espacio para Código QR DIAN y CUFE ]</strong></p>
+        {% if factura.dian_estado == 'Aceptada' %}
+            <p>CUFE: {{ factura.cufe }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
