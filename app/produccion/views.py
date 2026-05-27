@@ -134,3 +134,62 @@ def produccion_detalle_view(request, orden_id):
         'insumos': orden.insumos.all(),
         'productos': orden.productos.all()
     })
+
+@login_required
+@transaction.atomic
+def produccion_anular_view(request, orden_id):
+    orden = get_object_or_404(OrdenProduccion, id=orden_id)
+    
+    if request.method == 'POST':
+        if orden.anulada:
+            messages.error(request, 'La orden ya ha sido anulada previamente.')
+            return redirect('produccion_detalle', orden_id=orden.id)
+            
+        orden.anulada = True
+        orden.estado = 'Borrador'
+        orden.save()
+        
+        for insumo in orden.insumos.all():
+            inv_bodega, _ = InventarioBodega.objects.get_or_create(
+                item=insumo.item, 
+                bodega=insumo.bodega_origen,
+                defaults={'cantidad_actual': Decimal('0.00')}
+            )
+            inv_bodega.cantidad_actual += insumo.cantidad
+            inv_bodega.save()
+            
+            MovimientoInventario.objects.create(
+                item=insumo.item,
+                bodega_origen=None,
+                bodega_destino=insumo.bodega_origen,
+                tipo_movimiento='Entrada',
+                cantidad=insumo.cantidad,
+                costo_unitario=insumo.item.costo_promedio,
+                concepto=f"Entrada por Anulación Orden {orden.numero_orden}",
+                usuario=request.user
+            )
+            
+        for producto in orden.productos.all():
+            inv_bodega_dest, _ = InventarioBodega.objects.get_or_create(
+                item=producto.item, 
+                bodega=producto.bodega_destino,
+                defaults={'cantidad_actual': Decimal('0.00')}
+            )
+            inv_bodega_dest.cantidad_actual -= producto.cantidad
+            inv_bodega_dest.save()
+            
+            MovimientoInventario.objects.create(
+                item=producto.item,
+                bodega_origen=producto.bodega_destino,
+                bodega_destino=None,
+                tipo_movimiento='Salida',
+                cantidad=producto.cantidad,
+                costo_unitario=producto.costo_unitario_asignado,
+                concepto=f"Salida por Anulación Orden {orden.numero_orden}",
+                usuario=request.user
+            )
+
+        messages.success(request, f'La orden {orden.numero_orden} fue anulada correctamente. Insumos devueltos y productos restados.')
+        return redirect('produccion_lista')
+        
+    return redirect('produccion_detalle', orden_id=orden.id)

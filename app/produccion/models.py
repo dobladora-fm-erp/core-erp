@@ -7,6 +7,7 @@ class OrdenProduccion(models.Model):
     
     ESTADO_CHOICES = [('Borrador', 'Borrador'), ('Finalizada', 'Finalizada (Mueve Inventario)')]
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='Borrador')
+    anulada = models.BooleanField(default=False)
     procesada = models.BooleanField(default=False, editable=False)
     observaciones = models.TextField(null=True, blank=True)
 

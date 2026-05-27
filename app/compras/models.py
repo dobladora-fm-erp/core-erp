@@ -25,6 +25,7 @@ class FacturaCompra(models.Model):
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Total")
 
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='Borrador', verbose_name="Estado")
+    anulada = models.BooleanField(default=False)
     procesada = models.BooleanField(
         default=False, 
         editable=False, 

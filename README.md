@@ -24,12 +24,12 @@ El ERP no se instala, se despliega en "Contenedores" aislados.
 El ERP ya cuenta con su **Cimiento Estructural** y **Motor de Operaciones** construidos y validados:
 
 1. **Módulos Core y Terceros:** Parametrización empresarial y catálogo único de clientes/proveedores con blindaje DIAN. Se implementó un comando de inyección de datos semilla (`seed_data`) para autocompletar geografía y catálogos.
-2. **Módulo de Inventario (Kardex Inmutable):** Arquitectura avanzada de Bodegas, Ítems y Conversiones. Se implementó un Kardex (*MovimientoInventario*) de **Sólo Lectura**, protegido por Signals nativas y bloqueos administrativos para prevenir manipulación manual de saldos.
-3. **Módulo de Compras (Abastecimiento):** Creación de facturación a proveedores conectada en tiempo real al Kardex gracias a transacciones atómicas de Postgres. Implementa autocálculo matemático (Subtotal, IVA 19%, Total) e inmutabilidad tras confirmación.
-4. **Módulo de Ventas (Validación NIIF):** Cierre de ciclo. Configurado con lógica anti-negativos; el sistema ejecuta bloqueos (`ValidationError`) en microsegundos si se intenta facturar material sin saldo en bodegas. Descarga automática del Kardex al confirmar.
-5. **Módulo de Producción (Transformación):** Órdenes de producción para transformar materia prima en producto terminado o retales, moviendo saldos automáticamente en el Kardex al finalizar bajo el formato entrada/salida unificado.
+2. **Módulo de Inventario (Kardex Inmutable):** Arquitectura avanzada de Bodegas, Ítems y Conversiones. Se implementó un Kardex (*MovimientoInventario*) protegido por Signals y soporte de "Bienes Intangibles" (servicios) que omiten la afectación de stock.
+3. **Módulo de Compras (Abastecimiento):** Creación de facturación conectada al Kardex mediante transacciones atómicas. Implementa inmutabilidad, soporte de compras intangibles sin error de stock, y "Botón de Pánico" transaccional para anular y reversar saldos e historial de CxP.
+4. **Módulo de Ventas (Validación NIIF y DIAN):** Configurado con lógica anti-negativos para bloquear ventas sin saldo físico. Su arquitectura ha sido expandida recientemente (Fase 5) para soportar metadata DIAN post-emisión (CUFE, XML, Fechas y Estados).
+5. **Módulo de Producción (Transformación):** Órdenes de producción para transformar materia prima. Incorpora tecnología de reversión ("Botón de Pánico") capaz de devolver las materias primas consumidas y desaparecer los productos terminados generados en caso de error.
 6. **Módulo de Tesorería (Finanzas):** Cuentas bancarias centralizadas, Cuentas por Cobrar (CxC) integradas directamente con Ventas y Cuentas por Pagar (CxP) conectadas con Compras. Control de flujo de caja y emisión de pagos/recibos auditable.
-7. **Autonomía Frontend (UX/UI Operativa):** Desarrollo de interfaces operativas (Bootstrap 5) desacopladas del panel administrativo. Integra tecnología inteligente de búsqueda predictiva (*Select2*) en todas las llaves transaccionales para automatizar y proteger la selección de items, clientes, cuentas y facturas, asegurando velocidad en los puntos de venta o captura.
+7. **Autonomía Frontend (UX/UI Operativa):** Desarrollo de interfaces operativas (Bootstrap 5) desacopladas del panel administrativo. Integra tecnología inteligente de búsqueda predictiva (*Select2*) en todas las llaves transaccionales.
 
 ## 4. Documentación Detallada (Diagramas de Flujo)
 
@@ -43,4 +43,4 @@ Para entender cómo operan y se comunican los módulos a nivel de datos, consult
 - [06. Tesorería y Finanzas](docs/06_tesoreria_finanzas.md)
 
 ## 5. Próxima Fase Estratégica
-La siguiente etapa consiste en la preparación para la conexión por API de la Facturación Electrónica DIAN y reportes NIIF avanzados, consolidando así el ecosistema fiscal.
+Actualmente el núcleo transaccional, contable e inventarial se encuentra **certificado y estabilizado**. La arquitectura de bases de datos ya cuenta con los cimientos (Fase 5) para conectarse con la pasarela oficial de la **Facturación Electrónica DIAN**. El próximo hito será la implementación del cliente API REST para consumo del web service de la entidad tributaria.
