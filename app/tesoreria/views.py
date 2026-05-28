@@ -6,6 +6,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from .models import CuentaPorCobrar, CuentaPorPagar, CuentaBancaria
 from .forms import PagoRecibidoForm, PagoEmitidoForm, CuentaBancariaForm
+from core.audit import registrar_log
 
 @login_required
 def tesoreria_lista_view(request):
@@ -51,6 +52,7 @@ def registrar_pago_recibido_view(request):
                 banco.saldo_actual += pago.monto
                 banco.save()
                 messages.success(request, f'Pago recibido exitosamente por valor de ${pago.monto}.')
+                registrar_log(request, 'Pago', 'Tesorería', f'Pago recibido de ${pago.monto} para CxC #{pago.cuenta_por_cobrar.id} en {banco.nombre}')
                 return redirect('tesoreria_lista')
             except Exception as e:
                 messages.error(request, f'Error validando pago: {str(e)}')
@@ -86,6 +88,7 @@ def registrar_pago_emitido_view(request):
                 banco.saldo_actual -= pago.monto
                 banco.save()
                 messages.success(request, f'Pago emitido exitosamente por valor de ${pago.monto}.')
+                registrar_log(request, 'Pago', 'Tesorería', f'Pago emitido de ${pago.monto} para CxP #{pago.cuenta_por_pagar.id} desde {banco.nombre}')
                 return redirect('tesoreria_lista')
             except Exception as e:
                 messages.error(request, f'Error validando pago: {str(e)}')

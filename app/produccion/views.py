@@ -9,6 +9,7 @@ from django.db.models import Sum
 from .models import OrdenProduccion, InsumoConsumido, ProductoGenerado
 from .forms import OrdenProduccionForm, InsumoFormSet, ProductoFormSet
 from inventario.models import InventarioBodega, MovimientoInventario
+from core.audit import registrar_log
 
 @login_required
 def produccion_lista_view(request):
@@ -112,6 +113,7 @@ def produccion_crear_view(request):
                         ptborrado.delete()
                     
                     messages.success(request, f'Orden de Producción {orden.numero_orden} procesada exitosamente. Inventario Transmutado.')
+                    registrar_log(request, 'Creación', 'Producción', f'Orden {orden.numero_orden} procesada.')
                     return redirect('produccion_lista')
             except ValueError as e:
                 messages.error(request, str(e))
@@ -201,6 +203,7 @@ def produccion_anular_view(request, orden_id):
                     usuario=request.user
                 )
 
+        registrar_log(request, 'Anulación', 'Producción', f'Orden {orden.numero_orden} anulada. Insumos devueltos y productos restados.')
         messages.success(request, f'La orden {orden.numero_orden} fue anulada correctamente. Insumos devueltos y productos restados.')
         return redirect('produccion_lista')
         

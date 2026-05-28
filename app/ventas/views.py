@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.utils import timezone
 import uuid
 from inventario.models import InventarioBodega, MovimientoInventario
+from core.audit import registrar_log
 
 @login_required
 def ventas_lista_view(request):
@@ -92,6 +93,7 @@ def venta_crear_view(request):
                     factura.save()
 
                     messages.success(request, f'Factura {factura.numero_factura} registrada. Stock descontado y cuenta por cobrar generada exitosamente.')
+                    registrar_log(request, 'Creación', 'Ventas', f'Factura {factura.numero_factura} creada por ${factura.total}')
                     return redirect('ventas_lista')
             except ValueError as e:
                 messages.error(request, str(e))
@@ -161,6 +163,7 @@ def anular_venta_view(request, factura_id):
                     usuario=request.user
                 )
 
+        registrar_log(request, 'Anulación', 'Ventas', f'Factura {factura.numero_factura} anulada. Total: ${factura.total}')
         messages.success(request, f'La factura {factura.numero_factura} fue anulada correctamente. Inventario devuelto y cartera cancelada.')
         return redirect('ventas_lista')
         

@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Sum
 from decimal import Decimal
 from inventario.models import InventarioBodega, MovimientoInventario
+from core.audit import registrar_log
 
 @login_required
 def compras_lista_view(request):
@@ -95,6 +96,7 @@ def compra_crear_view(request):
                     factura.save()
 
                     messages.success(request, f'Factura {factura.numero_factura_proveedor} registrada: Kardex alimentado y CxP Automática generada.')
+                    registrar_log(request, 'Creación', 'Compras', f'Factura {factura.numero_factura_proveedor} registrada por ${factura.total}')
                     return redirect('compras_lista')
             except Exception as e:
                 messages.error(request, f'Error validando la compra: {str(e)}')
@@ -168,6 +170,7 @@ def compra_anular_view(request, factura_id):
                     usuario=request.user
                 )
 
+        registrar_log(request, 'Anulación', 'Compras', f'Factura {factura.numero_factura_proveedor} anulada. Total: ${factura.total}')
         messages.success(request, f'La compra {factura.numero_factura_proveedor} fue anulada correctamente. Inventario reversado y CxP cancelada.')
         return redirect('compras_lista')
         
