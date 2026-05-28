@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from .models import CuentaPorCobrar, CuentaPorPagar, CuentaBancaria
 from .forms import PagoRecibidoForm, PagoEmitidoForm, CuentaBancariaForm
@@ -79,17 +80,19 @@ def registrar_pago_emitido_view(request):
                 # 2. DESPUÉS modificar saldos con bloqueo de fila
                 cxp = CuentaPorPagar.objects.select_for_update().get(id=pago.cuenta_por_pagar.id)
                 banco = CuentaBancaria.objects.select_for_update().get(id=pago.cuenta_origen.id)
+                if banco.saldo_actual < pago.monto:
+                    raise ValidationError(f'Fondos insuficientes en la cuenta bancaria seleccionada. Disponible: ${banco.saldo_actual}, Requerido: ${pago.monto}')
                 cxp.saldo_pendiente -= pago.monto
                 if cxp.saldo_pendiente <= 0:
                     cxp.estado = 'Pagada'
                 cxp.save()
-                if banco.saldo_actual < pago.monto:
-                    raise ValueError(f'Saldo insuficiente en {banco.nombre}. Disponible: ${banco.saldo_actual}, Requerido: ${pago.monto}')
                 banco.saldo_actual -= pago.monto
                 banco.save()
                 messages.success(request, f'Pago emitido exitosamente por valor de ${pago.monto}.')
                 registrar_log(request, 'Pago', 'Tesorería', f'Pago emitido de ${pago.monto} para CxP #{pago.cuenta_por_pagar.id} desde {banco.nombre}')
                 return redirect('tesoreria_lista')
+            except ValidationError as e:
+                messages.error(request, e.message)
             except Exception as e:
                 messages.error(request, f'Error validando pago: {str(e)}')
     else:

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from .models import FacturaVenta, DetalleVenta
 from .forms import FacturaVentaForm, DetalleVentaFormSet
 from django.contrib import messages
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
@@ -97,6 +97,8 @@ def venta_crear_view(request):
                     return redirect('ventas_lista')
             except ValueError as e:
                 messages.error(request, str(e))
+            except IntegrityError:
+                messages.error(request, 'Error de concurrencia o stock insuficiente detectado en la base de datos.')
             except Exception as e:
                 messages.error(request, f'Error validando la venta: {str(e)}')
     else:
@@ -188,3 +190,42 @@ def venta_pdf_view(request, factura_id):
         return response
     return HttpResponse("Error Rendering PDF", status=400)
 
+
+@login_required
+@transaction.atomic
+def emitir_factura_dian_view(request, factura_id):
+    from .dian_service import generar_xml_factura, generar_cufe, generar_cadena_qr
+
+    factura = get_object_or_404(FacturaVenta, id=factura_id)
+
+    if request.method == 'POST':
+        # Validaciones previas
+        if factura.anulada:
+            messages.error(request, 'No se puede emitir una factura anulada a la DIAN.')
+            return redirect('venta_detalle', factura_id=factura.id)
+
+        if factura.dian_estado != 'No Enviada':
+            messages.error(request, f'Esta factura ya fue procesada por la DIAN. Estado actual: {factura.dian_estado}')
+            return redirect('venta_detalle', factura_id=factura.id)
+
+        try:
+            # 1. Generar CUFE (SHA-384)
+            factura.cufe = generar_cufe(factura)
+
+            # 2. Generar XML UBL 2.1
+            generar_xml_factura(factura)
+
+            # 3. Generar cadena QR
+            factura.cadena_qr = generar_cadena_qr(factura)
+
+            # 4. Marcar como aceptada
+            factura.dian_estado = 'Aceptada'
+            factura.dian_fecha_validacion = timezone.now()
+            factura.save()
+
+            registrar_log(request, 'Creación', 'Ventas', f'Factura {factura.numero_factura} emitida a la DIAN. CUFE: {factura.cufe[:20]}...')
+            messages.success(request, f'✅ Factura {factura.numero_factura} emitida exitosamente a la DIAN. CUFE generado y XML almacenado.')
+        except Exception as e:
+            messages.error(request, f'Error al emitir factura a la DIAN: {str(e)}')
+
+    return redirect('venta_detalle', factura_id=factura.id)

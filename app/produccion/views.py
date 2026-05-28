@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db import transaction
+from django.db import transaction, IntegrityError
 import uuid
 from decimal import Decimal
 from django.db.models import Sum
@@ -117,6 +117,8 @@ def produccion_crear_view(request):
                     return redirect('produccion_lista')
             except ValueError as e:
                 messages.error(request, str(e))
+            except IntegrityError:
+                messages.error(request, 'Error de concurrencia o stock insuficiente detectado en la base de datos.')
             except Exception as e:
                 messages.error(request, f'Error validando la orden: {str(e)}')
     else:

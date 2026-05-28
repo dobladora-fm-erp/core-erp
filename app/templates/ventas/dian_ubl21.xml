@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+         xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+         xmlns:sts="dian:gov:co:facturaelectronica:Structures-2-1"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <!-- === EXTENSIONES DIAN === -->
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <sts:DianExtensions>
+                    <sts:InvoiceControl>
+                        <sts:InvoiceAuthorization>0000000000</sts:InvoiceAuthorization>
+                        <sts:AuthorizationPeriod>
+                            <cbc:StartDate>2026-01-01</cbc:StartDate>
+                            <cbc:EndDate>2027-12-31</cbc:EndDate>
+                        </sts:AuthorizationPeriod>
+                        <sts:AuthorizedInvoices>
+                            <sts:Prefix>VEN</sts:Prefix>
+                            <sts:From>1</sts:From>
+                            <sts:To>999999</sts:To>
+                        </sts:AuthorizedInvoices>
+                    </sts:InvoiceControl>
+                    <sts:InvoiceSource>
+                        <cbc:IdentificationCode listAgencyID="6" listAgencyName="United Nations Economic Commission for Europe" listSchemeURI="urn:oasis:names:specification:ubl:codelist:gc:CountryIdentificationCode-2.1">CO</cbc:IdentificationCode>
+                    </sts:InvoiceSource>
+                    <sts:SoftwareProvider>
+                        <sts:ProviderID schemeAgencyID="195" schemeAgencyName="CO, DIAN">DOBLADORA-FM-ERP</sts:ProviderID>
+                        <sts:SoftwareID>CORE-ERP-FM-001</sts:SoftwareID>
+                    </sts:SoftwareProvider>
+                </sts:DianExtensions>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+
+    <!-- === CABECERA === -->
+    <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+    <cbc:CustomizationID>10</cbc:CustomizationID>
+    <cbc:ProfileID>DIAN 2.1</cbc:ProfileID>
+    <cbc:ProfileExecutionID>2</cbc:ProfileExecutionID>
+    <cbc:ID>{{ factura.numero_factura }}</cbc:ID>
+    <cbc:UUID schemeID="2" schemeName="CUFE-SHA384">{{ factura.cufe }}</cbc:UUID>
+    <cbc:IssueDate>{{ factura.fecha_emision|date:"Y-m-d" }}</cbc:IssueDate>
+    <cbc:IssueTime>{{ hora_emision }}</cbc:IssueTime>
+    <cbc:DueDate>{{ factura.fecha_vencimiento|date:"Y-m-d" }}</cbc:DueDate>
+    <cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode>
+    <cbc:Note>{{ factura.numero_factura }} - Factura Electrónica de Venta</cbc:Note>
+    <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+    <cbc:LineCountNumeric>{{ detalles|length }}</cbc:LineCountNumeric>
+
+    <!-- === EMISOR (Dobladora FM) === -->
+    <cac:AccountingSupplierParty>
+        <cbc:AdditionalAccountID>1</cbc:AdditionalAccountID>
+        <cac:Party>
+            <cac:PartyName>
+                <cbc:Name>{{ empresa.razon_social }}</cbc:Name>
+            </cac:PartyName>
+            <cac:PhysicalLocation>
+                <cac:Address>
+                    <cbc:ID>{{ empresa.municipio.codigo_dane }}</cbc:ID>
+                    <cbc:CityName>{{ empresa.municipio.nombre }}</cbc:CityName>
+                    <cbc:CountrySubentity>{{ empresa.municipio.departamento.nombre }}</cbc:CountrySubentity>
+                    <cbc:CountrySubentityCode>{{ empresa.municipio.departamento.codigo_dane }}</cbc:CountrySubentityCode>
+                    <cac:AddressLine>
+                        <cbc:Line>{{ empresa.direccion }}</cbc:Line>
+                    </cac:AddressLine>
+                    <cac:Country>
+                        <cbc:IdentificationCode>CO</cbc:IdentificationCode>
+                        <cbc:Name languageID="es">Colombia</cbc:Name>
+                    </cac:Country>
+                </cac:Address>
+            </cac:PhysicalLocation>
+            <cac:PartyTaxScheme>
+                <cbc:RegistrationName>{{ empresa.razon_social }}</cbc:RegistrationName>
+                <cbc:CompanyID schemeAgencyID="195" schemeAgencyName="CO, DIAN" schemeID="{{ empresa.dv }}" schemeName="31">{{ empresa.nit }}</cbc:CompanyID>
+                <cbc:TaxLevelCode listName="48">{{ empresa.responsabilidades_fiscales }}</cbc:TaxLevelCode>
+                <cac:TaxScheme>
+                    <cbc:ID>01</cbc:ID>
+                    <cbc:Name>IVA</cbc:Name>
+                </cac:TaxScheme>
+            </cac:PartyTaxScheme>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>{{ empresa.razon_social }}</cbc:RegistrationName>
+                <cbc:CompanyID schemeAgencyID="195" schemeAgencyName="CO, DIAN" schemeID="{{ empresa.dv }}" schemeName="31">{{ empresa.nit }}</cbc:CompanyID>
+            </cac:PartyLegalEntity>
+            <cac:Contact>
+                <cbc:Telephone>{{ empresa.telefono }}</cbc:Telephone>
+                <cbc:ElectronicMail>{{ empresa.correo_facturacion }}</cbc:ElectronicMail>
+            </cac:Contact>
+        </cac:Party>
+    </cac:AccountingSupplierParty>
+
+    <!-- === CLIENTE (Adquirente) === -->
+    <cac:AccountingCustomerParty>
+        <cbc:AdditionalAccountID>{% if factura.cliente.tipo_persona == 'Juridica' %}1{% else %}2{% endif %}</cbc:AdditionalAccountID>
+        <cac:Party>
+            <cac:PartyName>
+                <cbc:Name>{% if factura.cliente.razon_social %}{{ factura.cliente.razon_social }}{% else %}{{ factura.cliente.nombres }} {{ factura.cliente.apellidos }}{% endif %}</cbc:Name>
+            </cac:PartyName>
+            <cac:PartyTaxScheme>
+                <cbc:RegistrationName>{% if factura.cliente.razon_social %}{{ factura.cliente.razon_social }}{% else %}{{ factura.cliente.nombres }} {{ factura.cliente.apellidos }}{% endif %}</cbc:RegistrationName>
+                <cbc:CompanyID schemeAgencyID="195" schemeAgencyName="CO, DIAN" schemeName="{{ factura.cliente.tipo_identificacion }}">{{ factura.cliente.numero_identificacion }}</cbc:CompanyID>
+                <cbc:TaxLevelCode listName="48">{{ factura.cliente.responsabilidades_fiscales|default:"R-99-PN" }}</cbc:TaxLevelCode>
+                <cac:TaxScheme>
+                    <cbc:ID>01</cbc:ID>
+                    <cbc:Name>IVA</cbc:Name>
+                </cac:TaxScheme>
+            </cac:PartyTaxScheme>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>{% if factura.cliente.razon_social %}{{ factura.cliente.razon_social }}{% else %}{{ factura.cliente.nombres }} {{ factura.cliente.apellidos }}{% endif %}</cbc:RegistrationName>
+                <cbc:CompanyID schemeAgencyID="195" schemeAgencyName="CO, DIAN" schemeName="{{ factura.cliente.tipo_identificacion }}">{{ factura.cliente.numero_identificacion }}</cbc:CompanyID>
+            </cac:PartyLegalEntity>
+            <cac:Contact>
+                <cbc:Telephone>{{ factura.cliente.telefono|default:"" }}</cbc:Telephone>
+                <cbc:ElectronicMail>{{ factura.cliente.email|default:"" }}</cbc:ElectronicMail>
+            </cac:Contact>
+        </cac:Party>
+    </cac:AccountingCustomerParty>
+
+    <!-- === TOTALES IMPOSITIVOS === -->
+    <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="COP">{{ factura.impuestos }}</cbc:TaxAmount>
+        <cac:TaxSubtotal>
+            <cbc:TaxableAmount currencyID="COP">{{ factura.subtotal }}</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="COP">{{ factura.impuestos }}</cbc:TaxAmount>
+            <cac:TaxCategory>
+                <cbc:Percent>19.00</cbc:Percent>
+                <cac:TaxScheme>
+                    <cbc:ID>01</cbc:ID>
+                    <cbc:Name>IVA</cbc:Name>
+                </cac:TaxScheme>
+            </cac:TaxCategory>
+        </cac:TaxSubtotal>
+    </cac:TaxTotal>
+
+    <!-- === TOTALES MONETARIOS === -->
+    <cac:LegalMonetaryTotal>
+        <cbc:LineExtensionAmount currencyID="COP">{{ factura.subtotal }}</cbc:LineExtensionAmount>
+        <cbc:TaxExclusiveAmount currencyID="COP">{{ factura.subtotal }}</cbc:TaxExclusiveAmount>
+        <cbc:TaxInclusiveAmount currencyID="COP">{{ factura.total }}</cbc:TaxInclusiveAmount>
+        <cbc:PayableAmount currencyID="COP">{{ factura.total }}</cbc:PayableAmount>
+    </cac:LegalMonetaryTotal>
+
+    <!-- === LÍNEAS DE FACTURA === -->
+    {% for detalle in detalles %}
+    <cac:InvoiceLine>
+        <cbc:ID>{{ forloop.counter }}</cbc:ID>
+        <cbc:InvoicedQuantity unitCode="EA">{{ detalle.cantidad }}</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="COP">{{ detalle.subtotal }}</cbc:LineExtensionAmount>
+        <cac:TaxTotal>
+            <cbc:TaxAmount currencyID="COP">{{ detalle.impuesto_linea }}</cbc:TaxAmount>
+            <cac:TaxSubtotal>
+                <cbc:TaxableAmount currencyID="COP">{{ detalle.subtotal }}</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="COP">{{ detalle.impuesto_linea }}</cbc:TaxAmount>
+                <cac:TaxCategory>
+                    <cbc:Percent>{{ detalle.item.porcentaje_iva }}</cbc:Percent>
+                    <cac:TaxScheme>
+                        <cbc:ID>01</cbc:ID>
+                        <cbc:Name>IVA</cbc:Name>
+                    </cac:TaxScheme>
+                </cac:TaxCategory>
+            </cac:TaxSubtotal>
+        </cac:TaxTotal>
+        <cac:Item>
+            <cbc:Description>{{ detalle.item.nombre }}</cbc:Description>
+        </cac:Item>
+        <cac:Price>
+            <cbc:PriceAmount currencyID="COP">{{ detalle.precio_unitario }}</cbc:PriceAmount>
+            <cbc:BaseQuantity unitCode="EA">1</cbc:BaseQuantity>
+        </cac:Price>
+    </cac:InvoiceLine>
+    {% endfor %}
+
+</Invoice>
