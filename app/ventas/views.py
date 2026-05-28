@@ -47,6 +47,7 @@ def venta_crear_view(request):
                     
                     detalles = formset.save(commit=False)
                     subtotal_factura = Decimal('0.00')
+                    total_impuestos = Decimal('0.00')
                     
                     for detalle in detalles:
                         detalle.factura = factura
@@ -71,19 +72,22 @@ def venta_crear_view(request):
                                 bodega_origen=detalle.bodega_origen,
                                 tipo_movimiento='Salida',
                                 cantidad=detalle.cantidad,
-                                costo_unitario=detalle.item.costo_promedio, # Se cruza el costo promedio real de inventario y NO el precio de venta para balance de KARDEX
+                                costo_unitario=detalle.item.costo_promedio,
                                 concepto=f"Factura Venta {factura.numero_factura}",
                                 usuario=request.user
                             )
                         
                         detalle.save()
                         subtotal_factura += detalle.subtotal
+                        
+                        impuesto_linea = detalle.subtotal * (detalle.item.porcentaje_iva / Decimal('100.00'))
+                        total_impuestos += impuesto_linea
 
                     for detalle_borrado in formset.deleted_objects:
                         detalle_borrado.delete()
                     
                     factura.subtotal = subtotal_factura
-                    factura.impuestos = factura.subtotal * Decimal('0.19') # IVA 19%
+                    factura.impuestos = total_impuestos
                     factura.total = factura.subtotal + factura.impuestos
                     factura.save()
 
@@ -133,28 +137,29 @@ def anular_venta_view(request, factura_id):
         if hasattr(factura, 'cuentaporcobrar'):
             factura.cuentaporcobrar.delete()
             
-        # 3. Devolver inventario y generar movimientos
+        # 3. Devolver inventario y generar movimientos (solo ítems tangibles)
         for detalle in factura.detalles.all():
-            # Restaurar stock
-            inv_bodega, _ = InventarioBodega.objects.get_or_create(
-                item=detalle.item, 
-                bodega=detalle.bodega_origen,
-                defaults={'cantidad_actual': 0}
-            )
-            inv_bodega.cantidad_actual += detalle.cantidad
-            inv_bodega.save()
-            
-            # Movimiento KARDEX de anulación
-            MovimientoInventario.objects.create(
-                item=detalle.item,
-                bodega_origen=None,
-                bodega_destino=detalle.bodega_origen,
-                tipo_movimiento='Entrada',
-                cantidad=detalle.cantidad,
-                costo_unitario=detalle.item.costo_promedio,
-                concepto=f"Entrada por Anulación Factura {factura.numero_factura}",
-                usuario=request.user
-            )
+            if detalle.item.maneja_inventario:
+                # Restaurar stock
+                inv_bodega, _ = InventarioBodega.objects.get_or_create(
+                    item=detalle.item, 
+                    bodega=detalle.bodega_origen,
+                    defaults={'cantidad_actual': 0}
+                )
+                inv_bodega.cantidad_actual += detalle.cantidad
+                inv_bodega.save()
+                
+                # Movimiento KARDEX de anulación
+                MovimientoInventario.objects.create(
+                    item=detalle.item,
+                    bodega_origen=None,
+                    bodega_destino=detalle.bodega_origen,
+                    tipo_movimiento='Entrada',
+                    cantidad=detalle.cantidad,
+                    costo_unitario=detalle.item.costo_promedio,
+                    concepto=f"Entrada por Anulación Factura {factura.numero_factura}",
+                    usuario=request.user
+                )
 
         messages.success(request, f'La factura {factura.numero_factura} fue anulada correctamente. Inventario devuelto y cartera cancelada.')
         return redirect('ventas_lista')

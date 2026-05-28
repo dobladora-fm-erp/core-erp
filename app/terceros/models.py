@@ -80,6 +80,10 @@ class Tercero(models.Model):
             if self.razon_social:
                 raise ValidationError({'razon_social': 'Error: Una persona natural no debe tener Razón Social registrada. Por favor, borre este campo o cambie el tipo a Persona Jurídica.'})
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         if self.razon_social:
             return self.razon_social

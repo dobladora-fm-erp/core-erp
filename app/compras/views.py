@@ -138,7 +138,7 @@ def compra_anular_view(request, factura_id):
             factura.cuentaporpagar.delete()
             
         for detalle in factura.detalles.all():
-            if detalle.item.maneja_inventario:
+            if detalle.item.maneja_inventario and detalle.bodega_destino:
                 inv_bodega, _ = InventarioBodega.objects.get_or_create(
                     item=detalle.item, 
                     bodega=detalle.bodega_destino,

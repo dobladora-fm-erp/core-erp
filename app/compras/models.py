@@ -35,6 +35,7 @@ class FacturaCompra(models.Model):
     class Meta:
         verbose_name = "Factura de Compra"
         verbose_name_plural = "Facturas de Compra"
+        unique_together = ('proveedor', 'numero_factura_proveedor')
 
     def __str__(self):
         return f"Factura #{self.numero_factura_proveedor} - {self.proveedor.razon_social or self.proveedor.numero_identificacion}"

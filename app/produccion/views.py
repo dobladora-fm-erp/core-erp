@@ -42,29 +42,30 @@ def produccion_crear_view(request):
                     for insumo in insumos:
                         insumo.orden = orden
                         
-                        # 1. Rebajar de Bodega Origen
-                        inv_bodega = InventarioBodega.objects.select_for_update().filter(
-                            item=insumo.item, 
-                            bodega=insumo.bodega_origen
-                        ).first()
-                        
-                        if not inv_bodega or inv_bodega.cantidad_actual < insumo.cantidad:
-                            disp = inv_bodega.cantidad_actual if inv_bodega else 0
-                            raise ValueError(f"Stock insuficiente de materia prima '{insumo.item.nombre}' en la bodega seleccionada. Disp: {disp}")
+                        # 1. Rebajar de Bodega Origen (solo si maneja inventario)
+                        if insumo.item.maneja_inventario:
+                            inv_bodega = InventarioBodega.objects.select_for_update().filter(
+                                item=insumo.item, 
+                                bodega=insumo.bodega_origen
+                            ).first()
                             
-                        inv_bodega.cantidad_actual -= insumo.cantidad
-                        inv_bodega.save()
-                        
-                        # Movimiento Salida Kardex
-                        MovimientoInventario.objects.create(
-                            item=insumo.item,
-                            bodega_origen=insumo.bodega_origen,
-                            tipo_movimiento='Salida',
-                            cantidad=insumo.cantidad,
-                            costo_unitario=insumo.item.costo_promedio,
-                            concepto=f"Consumo en Orden {orden.numero_orden}",
-                            usuario=request.user
-                        )
+                            if not inv_bodega or inv_bodega.cantidad_actual < insumo.cantidad:
+                                disp = inv_bodega.cantidad_actual if inv_bodega else 0
+                                raise ValueError(f"Stock insuficiente de materia prima '{insumo.item.nombre}' en la bodega seleccionada. Disp: {disp}")
+                                
+                            inv_bodega.cantidad_actual -= insumo.cantidad
+                            inv_bodega.save()
+                            
+                            # Movimiento Salida Kardex
+                            MovimientoInventario.objects.create(
+                                item=insumo.item,
+                                bodega_origen=insumo.bodega_origen,
+                                tipo_movimiento='Salida',
+                                cantidad=insumo.cantidad,
+                                costo_unitario=insumo.item.costo_promedio,
+                                concepto=f"Consumo en Orden {orden.numero_orden}",
+                                usuario=request.user
+                            )
                         insumo.save()
 
                     for insborrado in insumos_formset.deleted_objects:
@@ -74,35 +75,36 @@ def produccion_crear_view(request):
                     for producto in productos:
                         producto.orden = orden
                         
-                        # 2. Aumentar en Bodega Destino
-                        inv_bodega_dest, _ = InventarioBodega.objects.select_for_update().get_or_create(
-                            item=producto.item, 
-                            bodega=producto.bodega_destino,
-                            defaults={'cantidad_actual': Decimal('0.00')}
-                        )
-                        inv_bodega_dest.cantidad_actual += producto.cantidad
-                        inv_bodega_dest.save()
-                        
-                        MovimientoInventario.objects.create(
-                            item=producto.item,
-                            bodega_destino=producto.bodega_destino,
-                            tipo_movimiento='Entrada',
-                            cantidad=producto.cantidad,
-                            costo_unitario=producto.costo_unitario_asignado,
-                            concepto=f"Producción {orden.numero_orden}",
-                            usuario=request.user
-                        )
-                        
-                        # Recalcular Costo Promedio del P.T.
-                        item_pt = producto.item
-                        stock_actual = InventarioBodega.objects.filter(item=item_pt).aggregate(Sum('cantidad_actual'))['cantidad_actual__sum'] or Decimal('0.00')
-                        stock_antes = stock_actual - producto.cantidad
-                        costo_antes = item_pt.costo_promedio
-                        
-                        if stock_actual > 0:
-                            nuevo_costo = ((stock_antes * costo_antes) + (producto.cantidad * producto.costo_unitario_asignado)) / stock_actual
-                            item_pt.costo_promedio = nuevo_costo
-                            item_pt.save()
+                        # 2. Aumentar en Bodega Destino (solo si maneja inventario)
+                        if producto.item.maneja_inventario:
+                            inv_bodega_dest, _ = InventarioBodega.objects.select_for_update().get_or_create(
+                                item=producto.item, 
+                                bodega=producto.bodega_destino,
+                                defaults={'cantidad_actual': Decimal('0.00')}
+                            )
+                            inv_bodega_dest.cantidad_actual += producto.cantidad
+                            inv_bodega_dest.save()
+                            
+                            MovimientoInventario.objects.create(
+                                item=producto.item,
+                                bodega_destino=producto.bodega_destino,
+                                tipo_movimiento='Entrada',
+                                cantidad=producto.cantidad,
+                                costo_unitario=producto.costo_unitario_asignado,
+                                concepto=f"Producción {orden.numero_orden}",
+                                usuario=request.user
+                            )
+                            
+                            # Recalcular Costo Promedio del P.T.
+                            item_pt = producto.item
+                            stock_actual = InventarioBodega.objects.filter(item=item_pt).aggregate(Sum('cantidad_actual'))['cantidad_actual__sum'] or Decimal('0.00')
+                            stock_antes = stock_actual - producto.cantidad
+                            costo_antes = item_pt.costo_promedio
+                            
+                            if stock_actual > 0:
+                                nuevo_costo = ((stock_antes * costo_antes) + (producto.cantidad * producto.costo_unitario_asignado)) / stock_actual
+                                item_pt.costo_promedio = nuevo_costo
+                                item_pt.save()
                             
                         producto.save()
 
@@ -150,44 +152,54 @@ def produccion_anular_view(request, orden_id):
         orden.save()
         
         for insumo in orden.insumos.all():
-            inv_bodega, _ = InventarioBodega.objects.get_or_create(
-                item=insumo.item, 
-                bodega=insumo.bodega_origen,
-                defaults={'cantidad_actual': Decimal('0.00')}
-            )
-            inv_bodega.cantidad_actual += insumo.cantidad
-            inv_bodega.save()
-            
-            MovimientoInventario.objects.create(
-                item=insumo.item,
-                bodega_origen=None,
-                bodega_destino=insumo.bodega_origen,
-                tipo_movimiento='Entrada',
-                cantidad=insumo.cantidad,
-                costo_unitario=insumo.item.costo_promedio,
-                concepto=f"Entrada por Anulación Orden {orden.numero_orden}",
-                usuario=request.user
-            )
+            if insumo.item.maneja_inventario:
+                inv_bodega, _ = InventarioBodega.objects.get_or_create(
+                    item=insumo.item, 
+                    bodega=insumo.bodega_origen,
+                    defaults={'cantidad_actual': Decimal('0.00')}
+                )
+                inv_bodega.cantidad_actual += insumo.cantidad
+                inv_bodega.save()
+                
+                MovimientoInventario.objects.create(
+                    item=insumo.item,
+                    bodega_origen=None,
+                    bodega_destino=insumo.bodega_origen,
+                    tipo_movimiento='Entrada',
+                    cantidad=insumo.cantidad,
+                    costo_unitario=insumo.item.costo_promedio,
+                    concepto=f"Entrada por Anulación Orden {orden.numero_orden}",
+                    usuario=request.user
+                )
             
         for producto in orden.productos.all():
-            inv_bodega_dest, _ = InventarioBodega.objects.get_or_create(
-                item=producto.item, 
-                bodega=producto.bodega_destino,
-                defaults={'cantidad_actual': Decimal('0.00')}
-            )
-            inv_bodega_dest.cantidad_actual -= producto.cantidad
-            inv_bodega_dest.save()
-            
-            MovimientoInventario.objects.create(
-                item=producto.item,
-                bodega_origen=producto.bodega_destino,
-                bodega_destino=None,
-                tipo_movimiento='Salida',
-                cantidad=producto.cantidad,
-                costo_unitario=producto.costo_unitario_asignado,
-                concepto=f"Salida por Anulación Orden {orden.numero_orden}",
-                usuario=request.user
-            )
+            if producto.item.maneja_inventario:
+                inv_bodega_dest, _ = InventarioBodega.objects.get_or_create(
+                    item=producto.item, 
+                    bodega=producto.bodega_destino,
+                    defaults={'cantidad_actual': Decimal('0.00')}
+                )
+                inv_bodega_dest.cantidad_actual -= producto.cantidad
+                
+                stock_despues = inv_bodega_dest.cantidad_actual
+                stock_con_error = stock_despues + producto.cantidad
+                if stock_despues > 0:
+                    costo_reversado = ((stock_con_error * producto.item.costo_promedio) - (producto.cantidad * producto.costo_unitario_asignado)) / stock_despues
+                    producto.item.costo_promedio = costo_reversado
+                    producto.item.save()
+                    
+                inv_bodega_dest.save()
+                
+                MovimientoInventario.objects.create(
+                    item=producto.item,
+                    bodega_origen=producto.bodega_destino,
+                    bodega_destino=None,
+                    tipo_movimiento='Salida',
+                    cantidad=producto.cantidad,
+                    costo_unitario=producto.costo_unitario_asignado,
+                    concepto=f"Salida por Anulación Orden {orden.numero_orden}",
+                    usuario=request.user
+                )
 
         messages.success(request, f'La orden {orden.numero_orden} fue anulada correctamente. Insumos devueltos y productos restados.')
         return redirect('produccion_lista')

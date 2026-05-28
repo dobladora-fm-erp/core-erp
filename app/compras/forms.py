@@ -25,6 +25,10 @@ class DetalleCompraForm(forms.ModelForm):
             'bodega_destino': forms.Select(attrs={'class': 'form-select form-control-sm'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['bodega_destino'].required = False
+
 DetalleCompraFormSet = inlineformset_factory(
     FacturaCompra,
     DetalleCompra,

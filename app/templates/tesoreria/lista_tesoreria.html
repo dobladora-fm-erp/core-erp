@@ -29,6 +29,13 @@
         </div>
     </div>
 
+    <div class="mb-3">
+        <span class="me-2 fw-bold text-secondary"><i class="bi bi-funnel"></i> Filtrar:</span>
+        <a href="?estado=Pendiente" class="btn btn-sm {% if filtro_estado == 'Pendiente' %}btn-primary{% else %}btn-outline-primary{% endif %} me-1">Pendientes</a>
+        <a href="?estado=Pagada" class="btn btn-sm {% if filtro_estado == 'Pagada' %}btn-primary{% else %}btn-outline-primary{% endif %} me-1">Pagadas</a>
+        <a href="?estado=Todas" class="btn btn-sm {% if filtro_estado == 'Todas' %}btn-primary{% else %}btn-outline-primary{% endif %} me-1">Todas</a>
+    </div>
+
     <div class="row">
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm border-0 h-100">
@@ -66,13 +73,23 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No hay cuentas por cobrar
-                                        pendientes.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">No hay cuentas por cobrar pendientes.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    {% if cxc.has_other_pages %}
+                    <nav class="d-flex justify-content-center py-2">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if cxc.has_previous %}<li class="page-item"><a class="page-link" href="?page_cxc={{ cxc.previous_page_number }}&estado={{ filtro_estado }}">&laquo;</a></li>{% endif %}
+                            {% for num in cxc.paginator.page_range %}
+                            <li class="page-item {% if cxc.number == num %}active{% endif %}"><a class="page-link" href="?page_cxc={{ num }}&estado={{ filtro_estado }}">{{ num }}</a></li>
+                            {% endfor %}
+                            {% if cxc.has_next %}<li class="page-item"><a class="page-link" href="?page_cxc={{ cxc.next_page_number }}&estado={{ filtro_estado }}">&raquo;</a></li>{% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -113,13 +130,23 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No hay cuentas por pagar
-                                        pendientes.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">No hay cuentas por pagar pendientes.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    {% if cxp.has_other_pages %}
+                    <nav class="d-flex justify-content-center py-2">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if cxp.has_previous %}<li class="page-item"><a class="page-link" href="?page_cxp={{ cxp.previous_page_number }}&estado={{ filtro_estado }}">&laquo;</a></li>{% endif %}
+                            {% for num in cxp.paginator.page_range %}
+                            <li class="page-item {% if cxp.number == num %}active{% endif %}"><a class="page-link" href="?page_cxp={{ num }}&estado={{ filtro_estado }}">{{ num }}</a></li>
+                            {% endfor %}
+                            {% if cxp.has_next %}<li class="page-item"><a class="page-link" href="?page_cxp={{ cxp.next_page_number }}&estado={{ filtro_estado }}">&raquo;</a></li>{% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
         </div>

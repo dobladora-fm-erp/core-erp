@@ -79,6 +79,12 @@ class InventarioBodega(models.Model):
         unique_together = ('item', 'bodega')
         verbose_name = "Inventario por Bodega"
         verbose_name_plural = "Inventarios por Bodega"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(cantidad_actual__gte=0),
+                name='inventario_cantidad_no_negativa'
+            ),
+        ]
 
     def __str__(self):
         return f"{self.item.nombre} en {self.bodega.nombre}: {self.cantidad_actual}"

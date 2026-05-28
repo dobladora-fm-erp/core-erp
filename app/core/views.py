@@ -10,9 +10,10 @@ from django.utils.timezone import now
 @login_required
 def dashboard_view(request):
     mes_actual = now().month
+    anio_actual = now().year
     
-    # Sumatoria de Ingresos (Ventas Confirmadas del mes)
-    ingresos = FacturaVenta.objects.filter(estado='Confirmada', fecha_emision__month=mes_actual).aggregate(total=Sum('total'))['total'] or 0
+    # Sumatoria de Ingresos (Ventas no anuladas del mes y año actual)
+    ingresos = FacturaVenta.objects.filter(anulada=False, fecha_emision__year=anio_actual, fecha_emision__month=mes_actual).aggregate(total=Sum('total'))['total'] or 0
     
     # Sumatoria de Carteras (Deudas pendientes)
     cxp = CuentaPorPagar.objects.filter(estado='Pendiente').aggregate(total=Sum('saldo_pendiente'))['total'] or 0
