@@ -126,6 +126,10 @@ def anular_venta_view(request, factura_id):
         if factura.anulada:
             messages.error(request, 'La factura ya ha sido anulada previamente.')
             return redirect('venta_detalle', factura_id=factura.id)
+
+        if factura.dian_estado == 'Aceptada':
+            messages.error(request, 'ERROR FISCAL: Esta factura ya fue transmitida y aceptada por la DIAN. No puede ser anulada internamente. Debe emitir una Nota Crédito.')
+            return redirect('venta_detalle', factura_id=factura.id)
             
         # Revisar si hay CuentaPorCobrar con PagosRecibidos
         if hasattr(factura, 'cuentaporcobrar') and factura.cuentaporcobrar.pagorecibido_set.exists():
