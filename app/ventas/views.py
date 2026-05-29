@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, Http404
 from .utils import render_to_pdf
 from django.contrib.auth.decorators import login_required
 from .models import FacturaVenta, DetalleVenta
@@ -229,3 +229,14 @@ def emitir_factura_dian_view(request, factura_id):
             messages.error(request, f'Error al emitir factura a la DIAN: {str(e)}')
 
     return redirect('venta_detalle', factura_id=factura.id)
+
+
+@login_required
+def descargar_xml_dian_view(request, factura_id):
+    factura = get_object_or_404(FacturaVenta, id=factura_id)
+    if not factura.xml_dian or not factura.xml_dian.storage.exists(factura.xml_dian.name):
+        raise Http404("El archivo XML no se encuentra en el servidor.")
+    
+    response = FileResponse(factura.xml_dian.open('rb'), content_type='application/xml')
+    response['Content-Disposition'] = f'attachment; filename="Factura_{factura.numero_factura}_DIAN.xml"'
+    return response

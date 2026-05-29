@@ -62,7 +62,7 @@
                 </div>
                 <div class="col-md-4 text-end">
                     {% if factura.xml_dian %}
-                    <a href="{{ factura.xml_dian.url }}" class="btn btn-outline-primary" download><i class="bi bi-filetype-xml"></i> Descargar XML</a>
+                    <a href="{% url 'descargar_xml_dian' factura.id %}" class="btn btn-outline-primary"><i class="bi bi-filetype-xml"></i> Descargar XML</a>
                     {% endif %}
                 </div>
             </div>

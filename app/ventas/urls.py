@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:factura_id>/anular/', views.anular_venta_view, name='venta_anular'),
     path('<int:factura_id>/pdf/', views.venta_pdf_view, name='venta_pdf'),
     path('<int:factura_id>/emitir-dian/', views.emitir_factura_dian_view, name='venta_emitir_dian'),
+    path('<int:factura_id>/descargar-xml/', views.descargar_xml_dian_view, name='descargar_xml_dian'),
 ]
