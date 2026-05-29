@@ -42,6 +42,17 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-danger border-4">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold"><i class="bi bi-calendar-x text-danger"></i> Cartera por Edades</h5>
+                    <p class="card-text text-muted">Análisis de cuentas por cobrar clasificadas por su antigüedad (días de mora).</p>
+                </div>
+                <div class="card-footer bg-white border-0 pb-3">
+                    <a href="{% url 'reporte_cartera_edades' %}" class="btn btn-outline-danger w-100">Ver Reporte</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

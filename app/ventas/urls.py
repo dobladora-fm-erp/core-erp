@@ -6,6 +6,7 @@ urlpatterns = [
     path('nueva/', views.venta_crear_view, name='venta_crear'),
     path('<int:factura_id>/', views.venta_detalle_view, name='venta_detalle'),
     path('<int:factura_id>/anular/', views.anular_venta_view, name='venta_anular'),
+    path('<int:factura_id>/nota-credito/', views.nota_credito_crear_view, name='nota_credito_crear'),
     path('<int:factura_id>/pdf/', views.venta_pdf_view, name='venta_pdf'),
     path('<int:factura_id>/emitir-dian/', views.emitir_factura_dian_view, name='venta_emitir_dian'),
     path('<int:factura_id>/descargar-xml/', views.descargar_xml_dian_view, name='descargar_xml_dian'),

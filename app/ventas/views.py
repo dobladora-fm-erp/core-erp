@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, FileResponse, Http404
 from .utils import render_to_pdf
 from django.contrib.auth.decorators import login_required
-from .models import FacturaVenta, DetalleVenta
+from .models import FacturaVenta, DetalleVenta, ResolucionDIAN, NotaCreditoVenta
 from .forms import FacturaVentaForm, DetalleVentaFormSet
 from django.contrib import messages
 from django.db import transaction, IntegrityError
@@ -38,7 +38,18 @@ def venta_crear_view(request):
                         return render(request, 'ventas/crear_venta.html', {'form': form, 'formset': formset})
 
                     factura = form.save(commit=False)
-                    factura.numero_factura = f"VEN-{uuid.uuid4().hex[:6].upper()}"  # Genera ID definitivo
+                    
+                    # 1. Obtener y actualizar resolución DIAN
+                    resolucion = ResolucionDIAN.objects.select_for_update().filter(activa=True).first()
+                    if not resolucion:
+                        raise ValueError("No hay una Resolución DIAN activa configurada en el sistema. Contacte al administrador.")
+                    if resolucion.siguiente_numero > resolucion.numero_final:
+                        raise ValueError("La Resolución DIAN actual ha superado el número final permitido.")
+                        
+                    factura.numero_factura = f"{resolucion.prefijo}-{resolucion.siguiente_numero}"
+                    resolucion.siguiente_numero += 1
+                    resolucion.save()
+                    
                     factura.fecha_emision = timezone.now().date()
                     factura.estado = 'Confirmada'
                     factura.subtotal = Decimal('0.00')
@@ -111,10 +122,12 @@ def venta_crear_view(request):
 def venta_detalle_view(request, factura_id):
     factura = get_object_or_404(FacturaVenta, id=factura_id)
     detalles = factura.detalles.all()
+    tiene_nota_credito = hasattr(factura, 'notacreditoventa')
 
     return render(request, 'ventas/detalle_venta.html', {
         'factura': factura,
-        'detalles': detalles
+        'detalles': detalles,
+        'tiene_nota_credito': tiene_nota_credito
     })
 
 @login_required
@@ -172,6 +185,68 @@ def anular_venta_view(request, factura_id):
         registrar_log(request, 'Anulación', 'Ventas', f'Factura {factura.numero_factura} anulada. Total: ${factura.total}')
         messages.success(request, f'La factura {factura.numero_factura} fue anulada correctamente. Inventario devuelto y cartera cancelada.')
         return redirect('ventas_lista')
+        
+    return redirect('venta_detalle', factura_id=factura.id)
+
+@login_required
+@transaction.atomic
+def nota_credito_crear_view(request, factura_id):
+    factura = get_object_or_404(FacturaVenta, id=factura_id)
+    
+    if request.method == 'POST':
+        if factura.dian_estado != 'Aceptada':
+            messages.error(request, 'Solo se pueden generar notas crédito para facturas aceptadas por la DIAN.')
+            return redirect('venta_detalle', factura_id=factura.id)
+            
+        if hasattr(factura, 'notacreditoventa'):
+            messages.error(request, 'Esta factura ya tiene una nota crédito generada.')
+            return redirect('venta_detalle', factura_id=factura.id)
+            
+        # 1. Marcar estado interno y deuda
+        factura.estado = 'Anulada'
+        factura.anulada = True
+        factura.save()
+        
+        if hasattr(factura, 'cuentaporcobrar'):
+            # Lógica financiera
+            factura.cuentaporcobrar.saldo_pendiente = Decimal('0.00')
+            factura.cuentaporcobrar.estado = 'Pagada'
+            factura.cuentaporcobrar.save()
+            
+        # 2. Devolver inventario y generar movimientos (solo ítems tangibles)
+        for detalle in factura.detalles.all():
+            if detalle.item.maneja_inventario:
+                inv_bodega, _ = InventarioBodega.objects.get_or_create(
+                    item=detalle.item, 
+                    bodega=detalle.bodega_origen,
+                    defaults={'cantidad_actual': 0}
+                )
+                inv_bodega.cantidad_actual += detalle.cantidad
+                inv_bodega.save()
+                
+                MovimientoInventario.objects.create(
+                    item=detalle.item,
+                    bodega_destino=detalle.bodega_origen,
+                    usuario=request.user,
+                    tipo_movimiento='Entrada',
+                    cantidad=detalle.cantidad,
+                    costo_unitario=detalle.item.costo_promedio,
+                    concepto=f'Devolución por Nota Crédito a Factura {factura.numero_factura}'
+                )
+                
+        # 3. Guardar registro de la Nota Crédito
+        # Simulamos un número de nota (en un ERP real, habría una ResolucionDIAN para NC)
+        numero_nc = f"NC-{uuid.uuid4().hex[:6].upper()}"
+        
+        NotaCreditoVenta.objects.create(
+            factura=factura,
+            numero_nota=numero_nc,
+            motivo="Devolución de mercancía y anulación de factura",
+            dian_estado='Aceptada'
+        )
+        
+        registrar_log(request.user, "Ventas", f"Generada Nota Crédito {numero_nc} para la Factura {factura.numero_factura}")
+        messages.success(request, f'Nota Crédito {numero_nc} generada correctamente. El inventario ha sido reintegrado y la cartera cancelada.')
         
     return redirect('venta_detalle', factura_id=factura.id)
 

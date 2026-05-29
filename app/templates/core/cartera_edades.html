@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="bi bi-calendar-x text-danger"></i> Reporte de Cartera por Edades</h2>
+                <p class="text-muted">Análisis de cuentas por cobrar clasificadas por días de mora a la fecha actual.</p>
+            </div>
+            <a href="{% url 'centro_reportes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Reportes
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">0 a 30 días</h6>
+                    <h4 class="mb-0">${{ total_0_30|intcomma }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">31 a 60 días</h6>
+                    <h4 class="mb-0">${{ total_31_60|intcomma }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">Más de 60 días</h6>
+                    <h4 class="mb-0">${{ total_mas_60|intcomma }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark text-white shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title">Total Pendiente</h6>
+                    <h4 class="mb-0">${{ total_general|intcomma }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secciones por Edad -->
+    <!-- 0 a 30 días -->
+    <div class="card shadow-sm mb-4 border-top border-success border-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-circle-fill text-success small"></i> De 0 a 30 días de mora</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Factura</th>
+                            <th>Vencimiento</th>
+                            <th>Días Mora</th>
+                            <th class="text-end">Saldo Pendiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cxc in cartera_0_30 %}
+                        <tr>
+                            <td>{{ cxc.cliente }}</td>
+                            <td>
+                                <a href="{% url 'venta_detalle' cxc.factura_origen.id %}" class="text-decoration-none fw-bold">
+                                    {{ cxc.factura_origen.numero_factura }}
+                                </a>
+                            </td>
+                            <td>{{ cxc.fecha_vencimiento|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if cxc.dias_mora == 0 %}
+                                    <span class="badge bg-secondary">Al día</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ cxc.dias_mora }} días</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold">${{ cxc.saldo_pendiente|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No hay cartera en este rango</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 31 a 60 días -->
+    <div class="card shadow-sm mb-4 border-top border-warning border-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-circle-fill text-warning small"></i> De 31 a 60 días de mora</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Factura</th>
+                            <th>Vencimiento</th>
+                            <th>Días Mora</th>
+                            <th class="text-end">Saldo Pendiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cxc in cartera_31_60 %}
+                        <tr>
+                            <td>{{ cxc.cliente }}</td>
+                            <td>
+                                <a href="{% url 'venta_detalle' cxc.factura_origen.id %}" class="text-decoration-none fw-bold text-warning">
+                                    {{ cxc.factura_origen.numero_factura }}
+                                </a>
+                            </td>
+                            <td>{{ cxc.fecha_vencimiento|date:"Y-m-d" }}</td>
+                            <td><span class="badge bg-warning text-dark">{{ cxc.dias_mora }} días</span></td>
+                            <td class="text-end fw-bold">${{ cxc.saldo_pendiente|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No hay cartera en este rango</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Más de 60 días -->
+    <div class="card shadow-sm mb-4 border-top border-danger border-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-circle-fill text-danger small"></i> Más de 60 días de mora (CRÍTICO)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Factura</th>
+                            <th>Vencimiento</th>
+                            <th>Días Mora</th>
+                            <th class="text-end">Saldo Pendiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cxc in cartera_mas_60 %}
+                        <tr>
+                            <td>{{ cxc.cliente }}</td>
+                            <td>
+                                <a href="{% url 'venta_detalle' cxc.factura_origen.id %}" class="text-decoration-none fw-bold text-danger">
+                                    {{ cxc.factura_origen.numero_factura }}
+                                </a>
+                            </td>
+                            <td>{{ cxc.fecha_vencimiento|date:"Y-m-d" }}</td>
+                            <td><span class="badge bg-danger">{{ cxc.dias_mora }} días</span></td>
+                            <td class="text-end fw-bold text-danger">${{ cxc.saldo_pendiente|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No hay cartera en este rango</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

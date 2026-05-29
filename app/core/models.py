@@ -45,6 +45,8 @@ class Empresa(models.Model):
     direccion = models.CharField(max_length=255, verbose_name="Dirección")
     telefono = models.CharField(max_length=50, verbose_name="Teléfono")
     correo_facturacion = models.EmailField(verbose_name="Correo de Facturación")
+    correo_emision = models.EmailField(null=True, blank=True, verbose_name="Correo Emisión (SMTP)")
+    smtp_password = models.CharField(max_length=128, null=True, blank=True, verbose_name="Contraseña SMTP")
     logo = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo")
     
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT, verbose_name="Municipio")
