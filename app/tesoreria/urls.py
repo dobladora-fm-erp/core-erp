@@ -8,4 +8,5 @@ urlpatterns = [
     path('bancos/crear/', views.cuenta_bancaria_crear_view, name='cuenta_bancaria_crear'),
     path('bancos/<int:banco_id>/editar/', views.cuenta_bancaria_editar_view, name='cuenta_bancaria_editar'),
     path('bancos/<int:banco_id>/ver/', views.cuenta_bancaria_ver_view, name='cuenta_bancaria_ver'),
+    path('cxc/<int:cxc_id>/historial/', views.historial_abonos_cxc_view, name='historial_abonos_cxc'),
 ]

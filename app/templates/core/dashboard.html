@@ -4,9 +4,29 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <h2 class="text-secondary">Panel de Control General</h2>
             <p class="text-muted">Resumen de operaciones de Dobladora FM</p>
+        </div>
+        <div class="col-md-4">
+            <form method="GET" class="d-flex align-items-center gap-2 justify-content-end">
+                <select name="mes" class="form-select form-select-sm" style="width: auto;">
+                    {% for m in "123456789" %}
+                    <option value="{{ forloop.counter }}" {% if forloop.counter == mes_seleccionado %}selected{% endif %}>
+                        {% if forloop.counter == 1 %}Enero{% elif forloop.counter == 2 %}Febrero{% elif forloop.counter == 3 %}Marzo{% elif forloop.counter == 4 %}Abril{% elif forloop.counter == 5 %}Mayo{% elif forloop.counter == 6 %}Junio{% elif forloop.counter == 7 %}Julio{% elif forloop.counter == 8 %}Agosto{% elif forloop.counter == 9 %}Septiembre{% endif %}
+                    </option>
+                    {% endfor %}
+                    <option value="10" {% if mes_seleccionado == 10 %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if mes_seleccionado == 11 %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if mes_seleccionado == 12 %}selected{% endif %}>Diciembre</option>
+                </select>
+                <select name="anio" class="form-select form-select-sm" style="width: auto;">
+                    {% for y in rango_anios %}
+                    <option value="{{ y }}" {% if y == anio_seleccionado %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+            </form>
         </div>
     </div>
 
@@ -42,11 +62,62 @@
             <div class="card border-warning shadow-sm h-100">
                 <div class="card-body text-center">
                     <h5 class="card-title text-warning"><i class="bi bi-exclamation-triangle fs-1"></i></h5>
-                    <h6 class="card-subtitle mb-2 text-muted">Stock Crítico (&lt; 15 unds)</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Stock Crítico</h6>
                     <h3 class="card-text">{{ stock_critico }} Ítems</h3>
                 </div>
             </div>
         </div>
     </div>
+
+    {% if alertas_stock %}
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card shadow-sm border-top border-danger border-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Alertas de Stock Mínimo</h5>
+                    <span class="badge bg-danger">{{ stock_critico }} ítem{{ stock_critico|pluralize:"es" }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Ítem</th>
+                                    <th>Bodega</th>
+                                    <th class="text-center">Actual</th>
+                                    <th class="text-center">Mínimo</th>
+                                    <th class="text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alerta in alertas_stock %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">{{ alerta.item.nombre }}</td>
+                                    <td>{{ alerta.bodega.nombre }}</td>
+                                    <td class="text-center">
+                                        {% if alerta.cantidad_actual == 0 %}
+                                            <span class="badge bg-dark">AGOTADO</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ alerta.cantidad_actual }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center"><span class="badge bg-secondary">{{ alerta.item.stock_minimo }}</span></td>
+                                    <td class="text-center">
+                                        {% if alerta.cantidad_actual == 0 %}
+                                            <span class="text-danger fw-bold"><i class="bi bi-x-circle-fill"></i> Sin stock</span>
+                                        {% else %}
+                                            <span class="text-warning fw-bold"><i class="bi bi-exclamation-circle-fill"></i> Bajo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

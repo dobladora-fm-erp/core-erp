@@ -35,38 +35,11 @@ def produccion_crear_view(request):
                     
                     orden = form.save(commit=False)
                     orden.numero_orden = f"PROD-{uuid.uuid4().hex[:6].upper()}"
-                    orden.estado = 'Finalizada'
-                    orden.procesada = True
                     orden.save()
                     
                     insumos = insumos_formset.save(commit=False)
                     for insumo in insumos:
                         insumo.orden = orden
-                        
-                        # 1. Rebajar de Bodega Origen (solo si maneja inventario)
-                        if insumo.item.maneja_inventario:
-                            inv_bodega = InventarioBodega.objects.select_for_update().filter(
-                                item=insumo.item, 
-                                bodega=insumo.bodega_origen
-                            ).first()
-                            
-                            if not inv_bodega or inv_bodega.cantidad_actual < insumo.cantidad:
-                                disp = inv_bodega.cantidad_actual if inv_bodega else 0
-                                raise ValueError(f"Stock insuficiente de materia prima '{insumo.item.nombre}' en la bodega seleccionada. Disp: {disp}")
-                                
-                            inv_bodega.cantidad_actual -= insumo.cantidad
-                            inv_bodega.save()
-                            
-                            # Movimiento Salida Kardex
-                            MovimientoInventario.objects.create(
-                                item=insumo.item,
-                                bodega_origen=insumo.bodega_origen,
-                                tipo_movimiento='Salida',
-                                cantidad=insumo.cantidad,
-                                costo_unitario=insumo.item.costo_promedio,
-                                concepto=f"Consumo en Orden {orden.numero_orden}",
-                                usuario=request.user
-                            )
                         insumo.save()
 
                     for insborrado in insumos_formset.deleted_objects:
@@ -75,46 +48,14 @@ def produccion_crear_view(request):
                     productos = productos_formset.save(commit=False)
                     for producto in productos:
                         producto.orden = orden
-                        
-                        # 2. Aumentar en Bodega Destino (solo si maneja inventario)
-                        if producto.item.maneja_inventario:
-                            inv_bodega_dest, _ = InventarioBodega.objects.select_for_update().get_or_create(
-                                item=producto.item, 
-                                bodega=producto.bodega_destino,
-                                defaults={'cantidad_actual': Decimal('0.00')}
-                            )
-                            inv_bodega_dest.cantidad_actual += producto.cantidad
-                            inv_bodega_dest.save()
-                            
-                            MovimientoInventario.objects.create(
-                                item=producto.item,
-                                bodega_destino=producto.bodega_destino,
-                                tipo_movimiento='Entrada',
-                                cantidad=producto.cantidad,
-                                costo_unitario=producto.costo_unitario_asignado,
-                                concepto=f"Producción {orden.numero_orden}",
-                                usuario=request.user
-                            )
-                            
-                            # Recalcular Costo Promedio del P.T.
-                            item_pt = producto.item
-                            stock_actual = InventarioBodega.objects.filter(item=item_pt).aggregate(Sum('cantidad_actual'))['cantidad_actual__sum'] or Decimal('0.00')
-                            stock_antes = stock_actual - producto.cantidad
-                            costo_antes = item_pt.costo_promedio
-                            
-                            if stock_actual > 0:
-                                nuevo_costo = ((stock_antes * costo_antes) + (producto.cantidad * producto.costo_unitario_asignado)) / stock_actual
-                                item_pt.costo_promedio = nuevo_costo
-                                item_pt.save()
-                            
                         producto.save()
 
                     for ptborrado in productos_formset.deleted_objects:
                         ptborrado.delete()
                     
-                    messages.success(request, f'Orden de Producción {orden.numero_orden} procesada exitosamente. Inventario Transmutado.')
-                    registrar_log(request, 'Creación', 'Producción', f'Orden {orden.numero_orden} procesada.')
-                    return redirect('produccion_lista')
+                    messages.success(request, f'Orden de Producción {orden.numero_orden} guardada exitosamente en estado {orden.estado}.')
+                    registrar_log(request, 'Creación', 'Producción', f'Orden {orden.numero_orden} creada en estado {orden.estado}.')
+                    return redirect('produccion_detalle', orden_id=orden.id)
             except ValueError as e:
                 messages.error(request, str(e))
             except IntegrityError:
@@ -140,6 +81,100 @@ def produccion_detalle_view(request, orden_id):
         'insumos': orden.insumos.all(),
         'productos': orden.productos.all()
     })
+
+@login_required
+@transaction.atomic
+def produccion_procesar_view(request, orden_id):
+    orden = get_object_or_404(OrdenProduccion, id=orden_id)
+    
+    if request.method == 'POST':
+        if orden.procesada or orden.anulada:
+            messages.error(request, 'Esta orden ya fue procesada o está anulada.')
+            return redirect('produccion_detalle', orden_id=orden.id)
+            
+        try:
+            # 1. Rebajar de Bodega Origen (solo si maneja inventario)
+            for insumo in orden.insumos.all():
+                if insumo.item.maneja_inventario:
+                    inv_bodega = InventarioBodega.objects.select_for_update().filter(
+                        item=insumo.item, 
+                        bodega=insumo.bodega_origen
+                    ).first()
+                    
+                    if not inv_bodega or inv_bodega.cantidad_actual < insumo.cantidad:
+                        disp = inv_bodega.cantidad_actual if inv_bodega else 0
+                        raise ValueError(f"Stock insuficiente de materia prima '{insumo.item.nombre}' en la bodega seleccionada. Disp: {disp}")
+                        
+                    inv_bodega.cantidad_actual -= insumo.cantidad
+                    inv_bodega.save()
+                    
+                    MovimientoInventario.objects.create(
+                        item=insumo.item,
+                        bodega_origen=insumo.bodega_origen,
+                        tipo_movimiento='Salida',
+                        cantidad=insumo.cantidad,
+                        costo_unitario=insumo.item.costo_promedio,
+                        concepto=f"Consumo en Orden {orden.numero_orden}",
+                        usuario=request.user
+                    )
+
+            # 2. Aumentar en Bodega Destino (solo si maneja inventario)
+            for producto in orden.productos.all():
+                if producto.item.maneja_inventario:
+                    inv_bodega_dest, _ = InventarioBodega.objects.select_for_update().get_or_create(
+                        item=producto.item, 
+                        bodega=producto.bodega_destino,
+                        defaults={'cantidad_actual': Decimal('0.00')}
+                    )
+                    inv_bodega_dest.cantidad_actual += producto.cantidad
+                    inv_bodega_dest.save()
+                    
+                    MovimientoInventario.objects.create(
+                        item=producto.item,
+                        bodega_destino=producto.bodega_destino,
+                        tipo_movimiento='Entrada',
+                        cantidad=producto.cantidad,
+                        costo_unitario=producto.costo_unitario_asignado,
+                        concepto=f"Producción {orden.numero_orden}",
+                        usuario=request.user
+                    )
+                    
+                    item_pt = producto.item
+                    stock_actual = InventarioBodega.objects.filter(item=item_pt).aggregate(Sum('cantidad_actual'))['cantidad_actual__sum'] or Decimal('0.00')
+                    stock_antes = stock_actual - producto.cantidad
+                    costo_antes = item_pt.costo_promedio
+                    
+                    if stock_actual > 0:
+                        nuevo_costo = ((stock_antes * costo_antes) + (producto.cantidad * producto.costo_unitario_asignado)) / stock_actual
+                        item_pt.costo_promedio = nuevo_costo
+                        item_pt.save()
+            
+            orden.estado = 'Finalizada'
+            orden.procesada = True
+            orden.save()
+            
+            messages.success(request, f'Orden de Producción {orden.numero_orden} procesada exitosamente. Inventario Transmutado.')
+            registrar_log(request, 'Modificación', 'Producción', f'Orden {orden.numero_orden} procesada y finalizada.')
+        except ValueError as e:
+            messages.error(request, str(e))
+        except IntegrityError:
+            messages.error(request, 'Error de concurrencia o stock insuficiente detectado en la base de datos.')
+        except Exception as e:
+            messages.error(request, f'Error validando la orden: {str(e)}')
+
+    return redirect('produccion_detalle', orden_id=orden.id)
+
+@login_required
+def produccion_cambiar_estado_view(request, orden_id):
+    orden = get_object_or_404(OrdenProduccion, id=orden_id)
+    if request.method == 'POST':
+        nuevo_estado = request.POST.get('estado')
+        if nuevo_estado in dict(OrdenProduccion.ESTADO_CHOICES) and not orden.procesada:
+            orden.estado = nuevo_estado
+            orden.save()
+            messages.success(request, f'Estado de la orden actualizado a {nuevo_estado}.')
+            registrar_log(request, 'Modificación', 'Producción', f'Orden {orden.numero_orden} cambió a estado {nuevo_estado}.')
+    return redirect('produccion_detalle', orden_id=orden.id)
 
 @login_required
 @transaction.atomic

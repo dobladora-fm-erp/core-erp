@@ -5,8 +5,8 @@ class OrdenProduccion(models.Model):
     numero_orden = models.CharField(max_length=50, unique=True, verbose_name="Número de Orden (Lote)")
     fecha_creacion = models.DateField(auto_now_add=True)
     
-    ESTADO_CHOICES = [('Borrador', 'Borrador'), ('Finalizada', 'Finalizada (Mueve Inventario)')]
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='Borrador')
+    ESTADO_CHOICES = [('Borrador', 'Borrador'), ('En Proceso', 'En Proceso (Planta)'), ('Finalizada', 'Finalizada (Mueve Inventario)')]
+    estado = models.CharField(max_length=30, choices=ESTADO_CHOICES, default='Borrador')
     anulada = models.BooleanField(default=False)
     procesada = models.BooleanField(default=False, editable=False)
     observaciones = models.TextField(null=True, blank=True)

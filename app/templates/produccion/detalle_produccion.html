@@ -12,10 +12,23 @@
                 ORDEN ANULADA
             </span>
             {% else %}
-            <span class="badge bg-warning text-dark fs-5 px-3 py-2 me-2">
-                Finalizada (Kardex Afectado)
+            <span class="badge {% if orden.estado == 'Borrador' %}bg-secondary{% elif orden.estado == 'En Proceso' %}bg-primary{% else %}bg-success{% endif %} fs-5 px-3 py-2 me-2">
+                {{ orden.estado }} {% if orden.procesada %}(Kardex Afectado){% endif %}
             </span>
-            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#anularModal"><i class="bi bi-x-octagon"></i> Anular Orden</button>
+            {% if not orden.procesada %}
+                {% if orden.estado == 'Borrador' %}
+                <form method="POST" action="{% url 'produccion_cambiar_estado' orden.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="estado" value="En Proceso">
+                    <button type="submit" class="btn btn-outline-primary me-2"><i class="bi bi-play-circle me-1"></i> Iniciar Producción</button>
+                </form>
+                {% endif %}
+                <form method="POST" action="{% url 'produccion_procesar' orden.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success me-2 shadow-sm" onclick="return confirm('¿Confirma que desea finalizar y procesar esta orden? Esto alterará el inventario permanentemente.')"><i class="bi bi-check-circle me-1"></i> Procesar Inventario</button>
+                </form>
+            {% endif %}
+            <button class="btn btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#anularModal"><i class="bi bi-x-octagon me-1"></i> Anular Orden</button>
             {% endif %}
         </div>
     </div>

@@ -3,30 +3,46 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q, F
 from ventas.models import FacturaVenta
 from tesoreria.models import CuentaPorPagar, CuentaPorCobrar, PagoRecibido, PagoEmitido
-from inventario.models import InventarioBodega
+from inventario.models import InventarioBodega, Item
 from terceros.models import Tercero
 from django.utils.timezone import now
 
 @login_required
 def dashboard_view(request):
-    mes_actual = now().month
-    anio_actual = now().year
+    # Selector de período (GET params o defaults)
+    mes = request.GET.get('mes')
+    anio = request.GET.get('anio')
     
-    # Sumatoria de Ingresos (Ventas no anuladas del mes y año actual)
-    ingresos = FacturaVenta.objects.filter(anulada=False, fecha_emision__year=anio_actual, fecha_emision__month=mes_actual).aggregate(total=Sum('total'))['total'] or 0
+    mes_seleccionado = int(mes) if mes else now().month
+    anio_seleccionado = int(anio) if anio else now().year
+    
+    # Sumatoria de Ingresos (Ventas no anuladas del período seleccionado)
+    ingresos = FacturaVenta.objects.filter(anulada=False, fecha_emision__year=anio_seleccionado, fecha_emision__month=mes_seleccionado).aggregate(total=Sum('total'))['total'] or 0
     
     # Sumatoria de Carteras (Deudas pendientes)
     cxp = CuentaPorPagar.objects.filter(estado='Pendiente').aggregate(total=Sum('saldo_pendiente'))['total'] or 0
     cxc = CuentaPorCobrar.objects.filter(estado='Pendiente').aggregate(total=Sum('saldo_pendiente'))['total'] or 0
     
-    # Conteo de Stock Crítico (Ítems con 15 unidades o menos)
-    stock_critico = InventarioBodega.objects.filter(cantidad_actual__lte=15).count()
+    # Stock Crítico dinámico: ítems donde cantidad_actual <= stock_minimo del ítem
+    alertas_stock = InventarioBodega.objects.select_related('item', 'bodega').filter(
+        cantidad_actual__lte=F('item__stock_minimo'),
+        item__maneja_inventario=True
+    ).order_by('cantidad_actual')
+    stock_critico = alertas_stock.count()
+
+    # Rango de años para el selector
+    anio_actual = now().year
+    rango_anios = range(anio_actual - 2, anio_actual + 1)
 
     context = {
         'ingresos_mes': ingresos,
         'cxp_total': cxp,
         'cxc_total': cxc,
-        'stock_critico': stock_critico
+        'stock_critico': stock_critico,
+        'alertas_stock': alertas_stock[:10],
+        'mes_seleccionado': mes_seleccionado,
+        'anio_seleccionado': anio_seleccionado,
+        'rango_anios': rango_anios,
     }
     return render(request, 'core/dashboard.html', context)
 

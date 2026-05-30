@@ -45,6 +45,7 @@ class Item(models.Model):
     costo_promedio = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Costo Promedio")
     porcentaje_iva = models.DecimalField(max_digits=5, decimal_places=2, default=19.00, verbose_name="Porcentaje de IVA (%)")
     maneja_inventario = models.BooleanField(default=True, verbose_name="Maneja Inventario")
+    stock_minimo = models.DecimalField(max_digits=12, decimal_places=4, default=10, verbose_name="Stock Mínimo", help_text="Cantidad mínima antes de generar alerta")
 
     def __str__(self):
         return f"[{self.codigo_sku}] {self.nombre}"

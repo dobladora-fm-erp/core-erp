@@ -7,6 +7,7 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from core.models import Empresa
+from .dian_crypto import firmar_xml_dian
 
 
 def generar_xml_factura(factura):
@@ -33,12 +34,15 @@ def generar_xml_factura(factura):
     }
 
     xml_string = render_to_string('ventas/dian_ubl21.xml', context)
+    
+    # Inyección de Firma Criptográfica
+    xml_firmado = firmar_xml_dian(xml_string, empresa)
 
     # Guardar en el FileField del modelo
     filename = f"Factura_{factura.numero_factura}_DIAN.xml"
-    factura.xml_dian.save(filename, ContentFile(xml_string.encode('utf-8')), save=False)
+    factura.xml_dian.save(filename, ContentFile(xml_firmado.encode('utf-8')), save=False)
 
-    return xml_string
+    return xml_firmado
 
 
 def generar_cufe(factura):

@@ -49,6 +49,12 @@ class Empresa(models.Model):
     smtp_password = models.CharField(max_length=128, null=True, blank=True, verbose_name="Contraseña SMTP")
     logo = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo")
     
+    # Bóveda Fiscal DIAN
+    certificado_p12 = models.FileField(upload_to='certificados_dian/', null=True, blank=True, help_text="Certificado digital en formato .p12 o .pfx")
+    clave_certificado = models.CharField(max_length=128, null=True, blank=True)
+    software_id_dian = models.CharField(max_length=100, null=True, blank=True, help_text="ID del Software Propio en la DIAN")
+    test_set_id_dian = models.CharField(max_length=100, null=True, blank=True, help_text="ID del Set de Pruebas de habilitación")
+
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT, verbose_name="Municipio")
     ciiu_principal = models.ForeignKey(ActividadCIIU, on_delete=models.PROTECT, verbose_name="Actividad CIIU Principal")
 

@@ -5,8 +5,9 @@ from .models import OrdenProduccion, InsumoConsumido, ProductoGenerado
 class OrdenProduccionForm(forms.ModelForm):
     class Meta:
         model = OrdenProduccion
-        fields = ['observaciones']
+        fields = ['estado', 'observaciones']
         widgets = {
+            'estado': forms.Select(attrs={'class': 'form-select'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Ej: Lote especial L-455 de tejas cortas'}),
         }
 

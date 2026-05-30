@@ -245,7 +245,7 @@ def nota_credito_crear_view(request, factura_id):
             dian_estado='Aceptada'
         )
         
-        registrar_log(request.user, "Ventas", f"Generada Nota Crédito {numero_nc} para la Factura {factura.numero_factura}")
+        registrar_log(request, 'Anulación', 'Ventas', f"Generada Nota Crédito {numero_nc} para la Factura {factura.numero_factura}")
         messages.success(request, f'Nota Crédito {numero_nc} generada correctamente. El inventario ha sido reintegrado y la cartera cancelada.')
         
     return redirect('venta_detalle', factura_id=factura.id)

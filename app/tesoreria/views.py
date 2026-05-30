@@ -150,3 +150,14 @@ def cuenta_bancaria_ver_view(request, banco_id):
     banco = get_object_or_404(CuentaBancaria, id=banco_id)
     form = CuentaBancariaForm(instance=banco)
     return render(request, 'tesoreria/form_banco.html', {'form': form, 'titulo': f'Ver Cuenta: {banco}', 'is_ajax': is_ajax})
+
+@login_required
+def historial_abonos_cxc_view(request, cxc_id):
+    from .models import PagoRecibido
+    cxc = get_object_or_404(CuentaPorCobrar, id=cxc_id)
+    pagos = PagoRecibido.objects.filter(cuenta_por_cobrar=cxc).select_related('cuenta_destino').order_by('-fecha_pago')
+    
+    return render(request, 'tesoreria/historial_abonos.html', {
+        'cxc': cxc,
+        'pagos': pagos,
+    })
